@@ -1,4 +1,4 @@
-# adversarial-examples
+# 🟢 Adversarial Attacks
 
 > Generating adversarial examples to trick the neural network.
 
@@ -16,6 +16,12 @@ Enter conda environment `adversarial-examples`:
 conda activate adversarial-examples
 ```
 
+Run jupyter notebook in a browser.
+
+```bash
+jupyter notebook
+```
+
 Install dependencies:
 
 ```bash
@@ -28,10 +34,16 @@ Freeze dependencies into `requirements.txt`:
 conda list -e > requirements.txt
 ```
 
-... work work work ...
-
 Exit conda environment:
 
 ```bash
 conda deactivate
 ```
+
+---
+
+**🟢 Adversarial Attacks** ©Spencer Woo. Released under the [MIT License](LICENSE).
+
+Authored and maintained by Spencer Woo.
+
+[@Portfolio](https://spencerwoo.com/) · [@Blog](https://blog.spencerwoo.com/) · [@GitHub](https://github.com/spencerwooo)
