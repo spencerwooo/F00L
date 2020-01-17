@@ -1,8 +1,9 @@
 ![](./assets/banner-adv.png)
 
-# 🎃 Adversarial Attacks
-
-> Generating adversarial examples to trick the neural network.
+<div align="center">
+  <h1>Adversarial Attacks</h1>
+  <em>Generating adversarial examples to trick the neural network.</em>
+ </div>
 
 ## Usage
 
@@ -43,8 +44,6 @@ conda deactivate
 ```
 
 ---
-
-<img src="./assets/poster.png" width="25px" align="left"/>
 
 🎃 **Adversarial Attacks** ©Spencer Woo. Released under the [MIT License](LICENSE).
 
