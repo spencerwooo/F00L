@@ -1,4 +1,6 @@
-# 🟢 Adversarial Attacks
+<img src="./assets/poster.png" width="50px" align="left"/>
+
+# Adversarial Attacks
 
 > Generating adversarial examples to trick the neural network.
 
@@ -42,7 +44,9 @@ conda deactivate
 
 ---
 
-**🟢 Adversarial Attacks** ©Spencer Woo. Released under the [MIT License](LICENSE).
+<img src="./assets/poster.png" width="25px" align="left"/>
+
+**Adversarial Attacks** ©Spencer Woo. Released under the [MIT License](LICENSE).
 
 Authored and maintained by Spencer Woo.
 
