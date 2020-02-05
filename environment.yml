@@ -2,7 +2,7 @@ name: adversarial-attacks
 channels:
   - defaults
 dependencies:
-  - python=3.7
+  - python
   - tensorflow
   - numpy
   - matplotlib
