@@ -1,5 +1,6 @@
 name: adversarial-attacks
 channels:
+  - pytorch
   - defaults
 dependencies:
   - python
@@ -9,3 +10,8 @@ dependencies:
   - pylint
   - autopep8
   - notebook
+  - pytorch
+  - torchvision
+  - cudatoolkit=10.1
+  - pip:
+    - foolbox
