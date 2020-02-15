@@ -159,6 +159,30 @@ with torch.no_grad():
       class_correct[label] += c[i].item()
       class_total[label] += 1
 
-for i in range(10):
-  print('Accuracy of %5s : %2d %%' %
-        (classes[i], 100 * class_correct[i] / class_total[i]))
+
+def plot_class_acc(class_correct, class_total):
+  """ Plot classes' accuracy """
+
+  # get accuracy
+  accuracy = ((100 * class_correct[i] / class_total[i]) for i in range(10))
+  accuracy = tuple(accuracy)
+
+  # make the plot
+  plt.figure(figsize=(5, 5))
+  bar_plot = plt.barh(classes, accuracy, height=0.5)
+  plt.xlim([0, 100])
+  plt.title('CIFAR10 classes\' predictions')
+
+  # label all bars
+  for bar in bar_plot:
+    width = bar.get_width()
+    plt.annotate('{:.1f}%'.format(width),
+                 xy=(width, bar.get_y() + bar.get_height() / 2),
+                 xytext=(6, 0),  # 6 points offset
+                 textcoords="offset points", va='center', ha='left')
+
+  # show plot
+  plt.show()
+
+# plot classes' accuracy
+plot_class_acc(class_correct, class_total)
