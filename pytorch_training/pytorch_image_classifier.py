@@ -40,7 +40,11 @@ class Net(nn.Module):
 
 def gpu_init():
   """ Initialize GPU """
-  device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+  # use GPU
+  # device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+  # use CPU (small CNN size, CPU performs better)
+  device = torch.device('cpu')
   print(device)
   return device
 
