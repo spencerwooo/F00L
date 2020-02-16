@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# %%
-""" Applying a batch adversarial attack on ResNet with ImageNette weights """
+"""
+Applying an adversarial attack on ResNet
+with ImageNet weights
 
+Training dataset with a subset of ImageNet: ImageNette
+https://github.com/fastai/imagenette
+"""
+
+# %%
 import foolbox
 import numpy as np
 import torch
