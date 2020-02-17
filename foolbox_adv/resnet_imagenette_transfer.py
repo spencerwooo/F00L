@@ -7,9 +7,12 @@ Training a ResNet18 CNN and attacking it with Foolbox:
 ©2020 Spencer Woo - https://github.com/spencerwooo
 
 Transfer training ResNet18 with ImageNet pretrained weights
-on ImageNette dataset (outputs 10 class_names)
+  on ImageNette dataset (outputs 10 class_names)
 
 ImageNette: https://github.com/fastai/imagenette
+
+Please run in Jupyter Notebook or
+  Python Interactive Console for better experience
 """
 
 # %%
@@ -22,7 +25,6 @@ import urllib
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pkbar
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -30,6 +32,13 @@ import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 import torchvision.models as models
 import torchvision.transforms as transforms
+
+from datetime import datetime
+# if running from command line
+from tqdm import tqdm
+
+# if running from jupyter notebook
+# from tqdm.notebook import tqdm
 
 
 def import_dataset(dataset_path):
@@ -97,7 +106,7 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
   acc_list = {'train': [], 'val': []}
 
   for epoch in range(epoches):
-    print('Epoch: {}/{}'.format(epoch + 1, epoches))
+    # begin epoch
 
     for phase in ['train', 'val']:
       if phase == 'train':
@@ -108,11 +117,12 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       running_loss = 0.0
       running_corrects = 0
 
-      kbar = pkbar.Kbar(target=data_sizes[phase], width=30)
+      pbar = tqdm(data_loaders[phase])
+      pbar.set_description('Epoch: {}/{}'.format(epoch + 1, epoches))
+      pbar.set_postfix(loss='')
 
       # iterate over data
-      batch = 0
-      for images, labels in data_loaders[phase]:
+      for images, labels in pbar:
         images = images.to(device)
         labels = labels.to(device)
 
@@ -129,12 +139,10 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
             loss.backward()
             optimizer.step()
 
-            # update progress
-            kbar.update(batch, values=[('train_loss', loss.detach().cpu().numpy())])
-          else:
-            kbar.update(batch, values=[('val_loss', loss.detach().cpu().numpy())])
+          # update progress
+          pbar.set_postfix(loss='{:.2f}%'.format(
+              loss.detach().cpu().numpy()))
 
-        batch = batch + 1
         # statistics
         running_loss += loss.item() * images.size(0)
         running_corrects += torch.sum(preds == labels.data)
@@ -145,8 +153,8 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       epoch_loss = running_loss / data_sizes[phase]
       epoch_acc = running_corrects.double() / data_sizes[phase]
 
-      print('[{}] Loss: {:.4f} Acc: {:.4f}'.format(
-          phase, epoch_loss, epoch_acc))
+      # print('[{}] Loss: {:.4f} Acc: {:.4f}'.format(
+      #     phase, epoch_loss, epoch_acc))
 
       # save loss / acc for plotting
       loss_list[phase].append(epoch_loss)
@@ -226,13 +234,14 @@ if __name__ == "__main__":
 
   # %%
   # train and evaluate model
-  # 8 epoches roughly takes half an hour or less on GPU
+  # 8 epoches roughly takes an hour of training and evaluation or less on GPU
   model_epoches = 8
   model_conv, loss, acc = train_model(device, data_loaders, data_sizes, model_conv,
                                       criterion, optimizer_conv, exp_lr_scheduler, epoches=model_epoches)
 
   # save trained model
-  MODEL_PATH = './resnet_imagenette.pth'
+  now = datetime.now()
+  MODEL_PATH = '{}_resnet_imagenette.pth'.format(now.strftime('%y%m%d_%H%M'))
   torch.save(model_conv.state_dict(), MODEL_PATH)
 
   # plot loss and acc

@@ -1,6 +1,7 @@
 name: adversarial-attacks
 channels:
   - pytorch
+  - conda-forge
   - defaults
 dependencies:
   - python
@@ -13,8 +14,8 @@ dependencies:
   - pytorch
   - torchvision
   - cudatoolkit=10.1
+  - tqdm
   - pip
   - pip:
     - foolbox
-    - barbar
-    - pkbar
+    - ipywidgets
