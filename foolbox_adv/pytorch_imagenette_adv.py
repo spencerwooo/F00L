@@ -43,6 +43,8 @@ model.load_state_dict(torch.load(MODEL_PATH))
 # set mode evaluation
 model.eval()
 
+print('Instantiated ConvNET model: ResNet18IMGNette.')
+
 # %%
 # use GPU if available
 if torch.cuda.is_available():
