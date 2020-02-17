@@ -13,24 +13,23 @@ ImageNette: https://github.com/fastai/imagenette
 """
 
 # %%
-from __future__ import print_function
-from __future__ import division
+from __future__ import division, print_function
 
+import copy
 import os
 import time
-import copy
 import urllib
-from barbar import Bar
 
+import matplotlib.pyplot as plt
 import numpy as np
+import pkbar
 import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 import torchvision.models as models
 import torchvision.transforms as transforms
-import torch.optim as optim
-import torch.optim.lr_scheduler as lr_scheduler
-import torch.nn as nn
-import matplotlib.pyplot as plt
 
 
 def import_dataset(dataset_path):
@@ -74,7 +73,7 @@ def preview_images(img, img_title=None):
 
 def notify_server_jiang(msg_title, msg_desp):
   """
-  Notify training complete with Server 酱
+  Notify training complete with Server Chan
   """
   msg_title = urllib.parse.quote_plus(msg_title)
   msg_desp = urllib.parse.quote_plus(msg_desp)
@@ -82,7 +81,7 @@ def notify_server_jiang(msg_title, msg_desp):
       msg_title, msg_desp)
 
   f = urllib.request.urlopen(url)
-  print('\n[Server 酱]', f.read().decode('utf-8'))
+  print('\n[Server Chan]', f.read().decode('utf-8'))
 
 
 def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, scheduler, epoches=25):
@@ -109,8 +108,11 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       running_loss = 0.0
       running_corrects = 0
 
+      kbar = pkbar.Kbar(target=data_sizes[phase], width=30)
+
       # iterate over data
-      for images, labels in Bar(data_loaders[phase]):
+      batch = 0
+      for images, labels in data_loaders[phase]:
         images = images.to(device)
         labels = labels.to(device)
 
@@ -127,6 +129,12 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
             loss.backward()
             optimizer.step()
 
+            # update progress
+            kbar.update(batch, values=[('train_loss', loss.detach().cpu().numpy())])
+          else:
+            kbar.update(batch, values=[('val_loss', loss.detach().cpu().numpy())])
+
+        batch = batch + 1
         # statistics
         running_loss += loss.item() * images.size(0)
         running_corrects += torch.sum(preds == labels.data)
@@ -161,7 +169,7 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
   print('Best validation accuracy: {:4f} %'.format(best_acc * 100))
 
   # send notifications
-  msg_title = '恭喜！训练已完成 ( •̀ ω •́ )y'
+  msg_title = '🎉 Congratulations! Training finished.'
   msg_desp = '**Training completed in** `{:.0f}m {:.0f}s`\n**Best validation accuracy:** `{:4f} %`'.format(
       time_elapsed // 60, time_elapsed % 60, best_acc * 100)
   try:
