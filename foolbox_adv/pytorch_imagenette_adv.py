@@ -31,6 +31,7 @@ model.fc = nn.Linear(num_features, len(CLASS_NAMES))
 
 # load pretrained weights
 model.load_state_dict(torch.load(MODEL_PATH))
+model.eval()
 
 # %%
 # use GPU if available
