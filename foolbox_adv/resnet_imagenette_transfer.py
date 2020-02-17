@@ -16,12 +16,15 @@ Training a ResNet18 CNN and attacking it with Foolbox:
 4. Evaluate model's accuracy on adversarial examples
 """
 
+# %%
 from __future__ import print_function
 from __future__ import division
 
 import os
 import time
 import copy
+import urllib
+from barbar import Bar
 
 import numpy as np
 import torch
@@ -70,6 +73,16 @@ def preview_images(img, img_title=None):
   plt.pause(0.001)
 
 
+def notify_server_jiang(msg_title, msg_desp):
+  msg_title = urllib.parse.quote_plus(msg_title)
+  msg_desp = urllib.parse.quote_plus(msg_desp)
+  url = 'https://sc.ftqq.com/SCU51420Tc53c54655f0a9ffe3d66789be07a51af5cda6de0e572a.send?text={}&desp={}'.format(
+      msg_title, msg_desp)
+
+  f = urllib.request.urlopen(url)
+  print('\n[Server 酱]', f.read().decode('utf-8'))
+
+
 def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, scheduler, epoches=25):
   """
   Train model ResNet18 with ImageNette dataset
@@ -79,8 +92,11 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
   best_model_wts = copy.deepcopy(model.state_dict())
   best_acc = 0.0
 
+  loss_list = {'train': [], 'val': []}
+  acc_list = {'train': [], 'val': []}
+
   for epoch in range(epoches):
-    print('Epoch: {}/{}'.format(epoch, epoches - 1))
+    print('Epoch: {}/{}'.format(epoch + 1, epoches))
 
     for phase in ['train', 'val']:
       if phase == 'train':
@@ -92,7 +108,7 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       running_corrects = 0
 
       # iterate over data
-      for images, labels in data_loaders[phase]:
+      for images, labels in Bar(data_loaders[phase]):
         images = images.to(device)
         labels = labels.to(device)
 
@@ -122,6 +138,10 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       print('[{}] Loss: {:.4f} Acc: {:.4f}'.format(
           phase, epoch_loss, epoch_acc))
 
+      # save loss / acc for plotting
+      loss_list[phase].append(epoch_loss)
+      acc_list[phase].append(epoch_acc)
+
       # deepcopy the model
       if phase == 'val' and epoch_acc > best_acc:
         best_acc = epoch_acc
@@ -131,12 +151,18 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
 
   toc = time.time()
   time_elapsed = toc - tic
-  print('Training complete in {:0.f}m {:0.f}s'.format(
+  print('Training complete in {:.0f}m {:.0f}s'.format(
       time_elapsed // 60, time_elapsed % 60))
-  print('Best validation acc: {:4f}'.format(best_acc))
+  print('Best validation acc: {:4f} %'.format(best_acc * 100))
+
+  # send notifications
+  msg_title = '恭喜！训练已完成 ( •̀ ω •́ )y'
+  msg_desp = '**Training complete** in `{:.0f}m {:.0f}s`\n**Best validation acc:** `{:4f} %`'.format(
+      time_elapsed // 60, time_elapsed % 60, best_acc * 100)
+  notify_server_jiang(msg_title, msg_desp)
 
   model.load_state_dict(best_model_wts)
-  return model
+  return model, loss_list, acc_list
 
 
 def visualize_model(device, data_loaders, model, num_img=6):
@@ -182,6 +208,7 @@ if __name__ == "__main__":
   out = torchvision.utils.make_grid(inputs, padding=10)
   preview_images(out, img_title=[class_names[x] for x in labels])
 
+  # %%
   # Train ResNet18 as a fixed feature extractor
   model_conv = torchvision.models.resnet18(pretrained=True)
   for param in model_conv.parameters():
@@ -189,7 +216,7 @@ if __name__ == "__main__":
 
   # freeze all layers except the final layer (dense layer)
   num_features = model_conv.fc.in_features
-  model_conv.fc = nn.Linear(num_features, 10)
+  model_conv.fc = nn.Linear(num_features, len(class_names))
   model_conv = model_conv.to(device)
 
   # define criterion, optimizer and scheduler
@@ -200,13 +227,33 @@ if __name__ == "__main__":
       optimizer=optimizer_conv, step_size=7, gamma=0.1)
 
   # train and evaluate model
-  model_conv = train_model(device, data_loaders, data_sizes, model_conv,
-                           criterion, optimizer_conv, exp_lr_scheduler, epoches=25)
+  # 8 epoches roughly takes half an hour or less on GPU
+  model_epoches = 8
+  model_conv, loss, acc = train_model(device, data_loaders, data_sizes, model_conv,
+                                      criterion, optimizer_conv, exp_lr_scheduler, epoches=model_epoches)
 
   # save trained model
   MODEL_PATH = './resnet_imagenette.pth'
   torch.save(model_conv.state_dict(), MODEL_PATH)
 
+  # plot loss and acc
+  x = np.arange(0, model_epoches)
+
+  plt.figure(figsize=(12, 6))
+  plt.subplot(121)
+  plt.plot(x, loss['train'], label='train loss')
+  plt.plot(x, acc['train'], label='train accuracy')
+  plt.title('Training statistics')
+  plt.legend()
+
+  plt.subplot(122)
+  plt.plot(x, loss['val'], label='validate loss')
+  plt.plot(x, acc['val'], label='validate accuracy')
+  plt.title('Validation statistics')
+  plt.legend()
+  plt.show()
+
+  # %%
   # visualize model
-  visualize_model(model_conv)
+  visualize_model(device, data_loaders, model_conv, num_img=6)
   plt.show()

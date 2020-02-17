@@ -133,3 +133,4 @@ dmypy.json
 
 # training dataset folder
 data/
+*.pth
