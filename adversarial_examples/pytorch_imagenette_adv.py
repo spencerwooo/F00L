@@ -24,8 +24,8 @@ model = models.resnet18(pretrained=True).eval()
 
 # %%
 # use GPU if available
-# if torch.cuda.is_available():
-#   model = model.cuda()
+if torch.cuda.is_available():
+  model = model.cuda()
 
 preprocessing = dict(mean=[0.485, 0.456, 0.406],
                      std=[0.229, 0.224, 0.225], axis=-3)
