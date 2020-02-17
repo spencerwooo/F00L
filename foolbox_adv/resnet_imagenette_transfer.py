@@ -118,7 +118,8 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       running_corrects = 0
 
       pbar = tqdm(data_loaders[phase])
-      pbar.set_description('Epoch: {}/{}'.format(epoch + 1, epoches))
+      pbar.set_description(
+          'Epoch: {}/{} - {:>5}'.format(epoch + 1, epoches, phase))
       pbar.set_postfix(loss='')
 
       # iterate over data
@@ -139,13 +140,13 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
             loss.backward()
             optimizer.step()
 
-          # update progress
-          pbar.set_postfix(loss='{:.2f}%'.format(
-              loss.detach().cpu().numpy()))
-
         # statistics
         running_loss += loss.item() * images.size(0)
         running_corrects += torch.sum(preds == labels.data)
+
+        # update progress
+        pbar.set_postfix(loss='{:.2f}%'.format(
+            loss.detach().cpu().numpy()))
 
       if phase == 'train':
         scheduler.step()
@@ -153,7 +154,8 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       epoch_loss = running_loss / data_sizes[phase]
       epoch_acc = running_corrects.double() / data_sizes[phase]
 
-      # print('[{}] Loss: {:.4f} Acc: {:.4f}'.format(
+      # TODO: Fix progress bar faulty output
+      # pbar.write('[{}] Loss: {:.2f}% Acc: {:.2f}%'.format(
       #     phase, epoch_loss, epoch_acc))
 
       # save loss / acc for plotting
@@ -165,7 +167,8 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
         best_acc = epoch_acc
         best_model_wts = copy.deepcopy(model.state_dict())
 
-    print()
+    # epoch done
+    # tqdm.write('')
 
   # total training time
   toc = time.time()
@@ -260,3 +263,6 @@ if __name__ == "__main__":
   plt.title('Validation statistics')
   plt.legend()
   plt.show()
+
+
+# %%
