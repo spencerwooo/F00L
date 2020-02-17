@@ -6,14 +6,10 @@ Training a ResNet18 CNN and attacking it with Foolbox:
 
 ©2020 Spencer Woo - https://github.com/spencerwooo
 
-1. Transfer training ResNet18 with ImageNet pretrained weights
-  on ImageNette dataset (outputs 10 class_names)
+Transfer training ResNet18 with ImageNet pretrained weights
+on ImageNette dataset (outputs 10 class_names)
 
-  ImageNette: https://github.com/fastai/imagenette
-
-2. Evaluate model accuracy
-3. Attack model with Foolbox and generate adversarial examples
-4. Evaluate model's accuracy on adversarial examples
+ImageNette: https://github.com/fastai/imagenette
 """
 
 # %%
@@ -62,6 +58,9 @@ def import_dataset(dataset_path):
 
 
 def preview_images(img, img_title=None):
+  """
+  Preview images with normal values (denormalized)
+  """
   img = img.numpy().transpose((1, 2, 0))
   mean = np.array([0.485, 0.456, 0.406])
   std = np.array([0.229, 0.224, 0.225])
@@ -74,6 +73,9 @@ def preview_images(img, img_title=None):
 
 
 def notify_server_jiang(msg_title, msg_desp):
+  """
+  Notify training complete with Server 酱
+  """
   msg_title = urllib.parse.quote_plus(msg_title)
   msg_desp = urllib.parse.quote_plus(msg_desp)
   url = 'https://sc.ftqq.com/SCU51420Tc53c54655f0a9ffe3d66789be07a51af5cda6de0e572a.send?text={}&desp={}'.format(
@@ -149,8 +151,11 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
 
     print()
 
+  # total training time
   toc = time.time()
   time_elapsed = toc - tic
+
+  # print statistics
   print('Training complete in {:.0f}m {:.0f}s'.format(
       time_elapsed // 60, time_elapsed % 60))
   print('Best validation acc: {:4f} %'.format(best_acc * 100))
@@ -159,36 +164,13 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
   msg_title = '恭喜！训练已完成 ( •̀ ω •́ )y'
   msg_desp = '**Training complete** in `{:.0f}m {:.0f}s`\n**Best validation acc:** `{:4f} %`'.format(
       time_elapsed // 60, time_elapsed % 60, best_acc * 100)
-  notify_server_jiang(msg_title, msg_desp)
+  try:
+    notify_server_jiang(msg_title, msg_desp)
+  except Exception as e:
+    print(e)
 
   model.load_state_dict(best_model_wts)
   return model, loss_list, acc_list
-
-
-def visualize_model(device, data_loaders, model, num_img=6):
-  was_training = model.training()
-  model.eval()
-  images_so_far = 0
-  fig = plt.figure()
-
-  with torch.no_grad():
-    for i, (inputs, labels) in enumerate(data_loaders['val']):
-      inputs = inputs.to(device)
-      labels = labels.to(device)
-      outputs = model(inputs)
-      _, preds = torch.max(outputs, 1)
-
-      for j in range(inputs.size()[0]):
-        images_so_far += 1
-        ax = plt.subplot(num_img // 3, 3, images_so_far)
-        ax.set_title('predicted: {}'.format(class_names[preds[j]]))
-        preview_images(inputs.cpu().data[j])
-
-        if images_so_far == num_img:
-          model.train(mode=was_training)
-          return
-
-    model.train(mode=was_training)
 
 
 if __name__ == "__main__":
@@ -210,13 +192,21 @@ if __name__ == "__main__":
 
   # %%
   # Train ResNet18 as a fixed feature extractor
+  # See here: https://cs231n.github.io/transfer-learning/
+  #   for different types of ways to performing transfer learning
+
+  # instantiate ResNet18 model with pretrained weights from ImageNet
   model_conv = torchvision.models.resnet18(pretrained=True)
+
+  # freeze all layers except the final layer (dense layer)
   for param in model_conv.parameters():
     param.requires_grad = False
 
-  # freeze all layers except the final layer (dense layer)
+  # create final feature extraction linear layer
   num_features = model_conv.fc.in_features
   model_conv.fc = nn.Linear(num_features, len(class_names))
+
+  # push model to GPU
   model_conv = model_conv.to(device)
 
   # define criterion, optimizer and scheduler
@@ -251,9 +241,4 @@ if __name__ == "__main__":
   plt.plot(x, acc['val'], label='validate accuracy')
   plt.title('Validation statistics')
   plt.legend()
-  plt.show()
-
-  # %%
-  # visualize model
-  visualize_model(device, data_loaders, model_conv, num_img=6)
   plt.show()
