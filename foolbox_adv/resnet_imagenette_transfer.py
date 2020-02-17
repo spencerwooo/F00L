@@ -156,13 +156,13 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
   time_elapsed = toc - tic
 
   # print statistics
-  print('Training complete in {:.0f}m {:.0f}s'.format(
+  print('Training completed in {:.0f}m {:.0f}s'.format(
       time_elapsed // 60, time_elapsed % 60))
-  print('Best validation acc: {:4f} %'.format(best_acc * 100))
+  print('Best validation accuracy: {:4f} %'.format(best_acc * 100))
 
   # send notifications
   msg_title = '恭喜！训练已完成 ( •̀ ω •́ )y'
-  msg_desp = '**Training complete** in `{:.0f}m {:.0f}s`\n**Best validation acc:** `{:4f} %`'.format(
+  msg_desp = '**Training completed in** `{:.0f}m {:.0f}s`\n**Best validation accuracy:** `{:4f} %`'.format(
       time_elapsed // 60, time_elapsed % 60, best_acc * 100)
   try:
     notify_server_jiang(msg_title, msg_desp)
@@ -216,6 +216,7 @@ if __name__ == "__main__":
   exp_lr_scheduler = lr_scheduler.StepLR(
       optimizer=optimizer_conv, step_size=7, gamma=0.1)
 
+  # %%
   # train and evaluate model
   # 8 epoches roughly takes half an hour or less on GPU
   model_epoches = 8
