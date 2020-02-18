@@ -112,7 +112,7 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       running_loss = 0.0
       running_corrects = 0
 
-      pbar = tqdm(data_loaders[phase])
+      pbar = tqdm(data_loaders[phase], ncols=80)
       pbar.set_description(
           'Epoch: {}/{} - {:>5}'.format(epoch + 1, epoches, phase))
       pbar.set_postfix(loss='')
