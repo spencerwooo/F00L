@@ -21,6 +21,7 @@ import torchvision
 import torchvision.models as models
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
+from tqdm.auto import tqdm
 
 # pretrained model state_dict path
 MODEL_PATH = './resnet_imagenette.pth'
@@ -71,19 +72,21 @@ dataset_path = '../data/imagenette2-160/val'
 # load dataset with validation images
 dataset = torchvision.datasets.ImageFolder(
     root=dataset_path, transform=transform)
+# use first 1000 images (1000 images use approximately 30s on GPU)
+dataset = torch.utils.data.Subset(dataset, range(0, 1000))
+# compose dataset into dataloader
 dataset_loader = torch.utils.data.DataLoader(
-    dataset, batch_size=4, shuffle=True, num_workers=0)
+    dataset, shuffle=True, num_workers=0)
+dataset_size = len(dataset)
 
-print('Loaded data from: {}'.format(dataset_path))
+print('Loaded data from: {} with a total of {} images.'.format(
+    dataset_path, dataset_size))
 
 # %%
 # show sample images from ImageNette
 LEN = 4
 N_COL = 4
 N_ROW = 1
-
-data_iter = iter(dataset_loader)
-images, labels = data_iter.next()
 
 
 def img_to_np(image):
@@ -92,10 +95,36 @@ def img_to_np(image):
 
 
 plt.figure(figsize=(N_COL * 2.5, N_ROW * 2))
+data_iter = iter(dataset_loader)
 for i in range(LEN):
+  sample_image, sample_label = data_iter.next()
   plt.subplot(N_ROW, N_COL, i + 1)
-  plt.imshow(img_to_np(images[i]))
-  plt.title('GROUND TRUTH\n{}'.format(CLASS_NAMES[labels[i]]))
+  plt.imshow(img_to_np(sample_image.squeeze()))
+  plt.title('GROUND TRUTH\n{}'.format(CLASS_NAMES[sample_label.squeeze()]))
+
+# %%
+pbar = tqdm(dataset_loader)
+pbar.set_description('Validate predictions:')
+pbar.set_postfix(acc='0.0%')
+
+probs = []
+acc = 0.0
+i = 0
+for image, label in pbar:
+  # make a prediction
+  prob = fmodel.forward(image.numpy())
+  pred = np.argmax(prob)
+  probs.append(prob)
+  i += 1
+
+  # calculate current accuracy
+  acc += torch.sum(pred == label.data)
+  current_acc = acc * 100 / i
+  pbar.set_postfix(acc='{:.2f}%'.format(current_acc))
+  # label_list.append(labels)
+
+acc = acc * 100 / dataset_size
+pbar.write('\nValidated with accuracy of: {:.2f}%'.format(acc))
 
 # %%
 # make a prediction
