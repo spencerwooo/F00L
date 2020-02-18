@@ -219,8 +219,12 @@ for i, indice in enumerate(VISUALIZE_IMAGE_INDICE):
 for i, indice in enumerate(VISUALIZE_IMAGE_INDICE):
   plt.subplot(N_ROW, N_COL, LEN + i + 1)
   plt.imshow(np.transpose(adversarials[indice].squeeze(), (1, 2, 0)))
+
+  # if attack success - title green; else - title red
+  color = ('#36b37e' if not preds[indice] == adv_preds[indice] else '#ff3333')
+  # plot prediction / adversarial side by side
   plt.title('og_pred:{}\nadv_pred:{}'.format(
-      CLASS_NAMES[preds[indice]], CLASS_NAMES[adv_preds[indice]]))
+      CLASS_NAMES[preds[indice]], CLASS_NAMES[adv_preds[indice]]), color=color)
 
 plt.show()
 
