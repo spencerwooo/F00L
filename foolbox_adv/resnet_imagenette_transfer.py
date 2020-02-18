@@ -22,6 +22,7 @@ import copy
 import os
 import time
 import urllib
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,13 +33,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 import torchvision.models as models
 import torchvision.transforms as transforms
-
-from datetime import datetime
-# if running from command line
-from tqdm import tqdm
-
-# if running from jupyter notebook
-# from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 
 
 def import_dataset(dataset_path):
@@ -80,7 +75,7 @@ def preview_images(img, img_title=None):
   plt.pause(0.001)
 
 
-def notify_server_jiang(msg_title, msg_desp):
+def notify_server_chan(msg_title, msg_desp):
   """
   Notify training complete with Server Chan
   """
@@ -175,16 +170,16 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
   time_elapsed = toc - tic
 
   # print statistics
-  print('Training completed in {:.0f}m {:.0f}s'.format(
+  print('\nTraining completed in {:.0f}m {:.0f}s'.format(
       time_elapsed // 60, time_elapsed % 60))
   print('Best validation accuracy: {:4f} %'.format(best_acc * 100))
 
   # send notifications
-  msg_title = '🎉 Congratulations! Training finished.'
+  msg_title = 'Congrats, training success!'
   msg_desp = '**Training completed in** `{:.0f}m {:.0f}s`\n**Best validation accuracy:** `{:4f} %`'.format(
       time_elapsed // 60, time_elapsed % 60, best_acc * 100)
   try:
-    notify_server_jiang(msg_title, msg_desp)
+    notify_server_chan(msg_title, msg_desp)
   except Exception as e:
     print(e)
 
@@ -213,6 +208,7 @@ if __name__ == "__main__":
   # Train ResNet18 as a fixed feature extractor
   # See here: https://cs231n.github.io/transfer-learning/
   #   for different types of ways to performing transfer learning
+  print('Preparing ConvNET...')
 
   # instantiate ResNet18 model with pretrained weights from ImageNet
   model_conv = torchvision.models.resnet18(pretrained=True)
@@ -236,8 +232,9 @@ if __name__ == "__main__":
       optimizer=optimizer_conv, step_size=7, gamma=0.1)
 
   # %%
-  # train and evaluate model
-  # 8 epoches roughly takes an hour of training and evaluation or less on GPU
+  # Train and evaluate model
+  # 8 epoches roughly takes an hour of training and evaluation or less on GPU,
+  #   with an accuracy of around 97%
   model_epoches = 8
   model_conv, loss, acc = train_model(device, data_loaders, data_sizes, model_conv,
                                       criterion, optimizer_conv, exp_lr_scheduler, epoches=model_epoches)
