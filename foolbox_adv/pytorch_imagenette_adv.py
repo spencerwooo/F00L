@@ -13,6 +13,8 @@ ImageNette: https://github.com/fastai/imagenette
 """
 
 # %%
+import time
+
 import foolbox
 import numpy as np
 import torch
@@ -24,7 +26,7 @@ import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
 
 # pretrained model state_dict path
-MODEL_PATH = './resnet_imagenette.pth'
+MODEL_PATH = 'resnet_imagenette.pth'
 
 # 10 classes
 CLASS_NAMES = ['tench', 'English springer', 'cassette player', 'chain saw', 'church',
@@ -44,7 +46,7 @@ model.load_state_dict(torch.load(MODEL_PATH))
 # set mode evaluation
 model.eval()
 
-print('Instantiated ConvNET model: ResNet18IMGNette.')
+print('Instantiated ConvNET model: ResNet18ImageNette.')
 
 # %%
 # use GPU if available
@@ -82,8 +84,8 @@ dataset = torch.utils.data.Subset(dataset, images_in_class_indice)
 # dataset = torch.utils.data.Subset(dataset, range(0, 100))
 
 # compose dataset into dataloader
-dataset_loader = torch.utils.data.DataLoader(
-    dataset, shuffle=True, num_workers=0)
+# (don't shuffle, no need to shuffle, we're not training.)
+dataset_loader = torch.utils.data.DataLoader(dataset)
 # get dataset size (length)
 dataset_size = len(dataset)
 
@@ -135,30 +137,48 @@ acc = acc * 100 / dataset_size
 pbar.write('\nValidated with accuracy of: {:.2f}%'.format(acc))
 
 # %%
-# perform an adversarial attack with FGSM
+# Perform an adversarial attack with FGSM
+tic = time.time()
 attack = foolbox.attacks.FGSM(fmodel)
 
 pbar = tqdm(dataset_loader)
 pbar.set_description('Generate adversarials')
 
 # iterate through images to generate adversarials
+eps = [0.01 * i for i in range(0, 10)]
 adversarials = []
 for image, label in pbar:
-  adv = attack(image.numpy(), label.numpy())
+  adv = attack(image.numpy(), label.numpy(), epsilons=eps)
+
+  # if an attack fails under preferred criterions, `np.nan` is returned,
+  #  in which case, we'll return the original image
+  if np.isnan(adv).any():
+    adv = image.numpy()
   adversarials.append(adv)
+
+toc = time.time()
+time_elapsed = toc - tic
+pbar.write('\nAdversarials generated in: {:.2f}m {:.2f}s'.format(
+    time_elapsed // 60, time_elapsed % 60))
 
 # %%
 # make predictions on adversarial examples
 pbar = tqdm(dataset_loader)
 pbar.set_description('Validate adversarials')
 pbar.set_postfix(acc='0.00%')
-adv_preds = []
 i = 0
 adv_acc = 0.0
+adv_preds = []
+adv_failed = []
 for _, label in pbar:
   adv_prob = fmodel.forward(adversarials[i])
   adv_pred = np.argmax(adv_prob)
   adv_preds.append(adv_pred)
+
+  # attack failed (adversarial == ground truth)
+  if adv_pred == label.data:
+    adv_failed.append(i)
+
   i += 1
 
   adv_acc += torch.sum(adv_pred == label.data)
@@ -168,19 +188,40 @@ for _, label in pbar:
 adv_acc = adv_acc * 100 / dataset_size
 pbar.write(
     '\nModel predicted adversarials with an accuracy of: {:.2f}%'.format(adv_acc))
+
+# %%
+# Index image and labels to access them with indices
+# overhead may be high, run with caution
+visualize_images = []
+visualize_labels = []
+for image, label in dataset_loader:
+  visualize_images.append(image.numpy().squeeze())
+  visualize_labels.append(label.numpy().squeeze())
+
 # %%
 # Visualize adversarial examples with prediction
 # and ground truth side by side
-LEN = 4
+
+# sample images to preview
+VISUALIZE_IMAGE_INDICE = [23, 31, 40, 89]
+LEN = len(VISUALIZE_IMAGE_INDICE)
 N_COL = 4
-N_ROW = 1
+N_ROW = 2
 
 # plot adversarial examples predictions
-plt.figure(figsize=(N_COL * 2.5, N_ROW * 2))
-for i in range(LEN):
+plt.figure(figsize=(N_COL * 3.5, N_ROW * 4))
+for i, indice in enumerate(VISUALIZE_IMAGE_INDICE):
   plt.subplot(N_ROW, N_COL, i + 1)
-  plt.imshow(np.transpose(adversarials[i].squeeze(), (1, 2, 0)))
-  plt.title('Adversarial\n{}'.format(CLASS_NAMES[adv_preds[i]]))
+  plt.imshow(np.transpose(visualize_images[indice], (1, 2, 0)))
+  plt.title('ground_truth:{}'.format(CLASS_NAMES[visualize_labels[indice]]))
 
+
+for i, indice in enumerate(VISUALIZE_IMAGE_INDICE):
+  plt.subplot(N_ROW, N_COL, LEN + i + 1)
+  plt.imshow(np.transpose(adversarials[indice].squeeze(), (1, 2, 0)))
+  plt.title('og_pred:{}\nadv_pred:{}'.format(
+      CLASS_NAMES[preds[indice]], CLASS_NAMES[adv_preds[indice]]))
+
+plt.show()
 
 # %%
