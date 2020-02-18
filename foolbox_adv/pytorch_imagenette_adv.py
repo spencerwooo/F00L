@@ -66,17 +66,25 @@ transform = transforms.Compose([
     transforms.ToTensor()
 ])
 
+class_start_indice = [indice * 200 for indice in range(0, 10)]
+images_in_class_indice = np.array(
+    [[j for j in range(k, k + 10)] for k in class_start_indice]).flatten()
 # training dataset path
 dataset_path = '../data/imagenette2-160/val'
 
 # load dataset with validation images
 dataset = torchvision.datasets.ImageFolder(
     root=dataset_path, transform=transform)
-# use first 1000 images (1000 images use approximately 30s on GPU)
-dataset = torch.utils.data.Subset(dataset, range(0, 1000))
+
+# 1. get 10 images from 10 classes for a total of 100 images, or ...
+dataset = torch.utils.data.Subset(dataset, images_in_class_indice)
+# 2. get first 100 images (all tenches)
+# dataset = torch.utils.data.Subset(dataset, range(0, 100))
+
 # compose dataset into dataloader
 dataset_loader = torch.utils.data.DataLoader(
     dataset, shuffle=True, num_workers=0)
+# get dataset size (length)
 dataset_size = len(dataset)
 
 print('Loaded data from: {} with a total of {} images.'.format(
@@ -103,51 +111,76 @@ for i in range(LEN):
   plt.title('GROUND TRUTH\n{}'.format(CLASS_NAMES[sample_label.squeeze()]))
 
 # %%
+# Validate model's base prediction accuracy (about 97%)
 pbar = tqdm(dataset_loader)
-pbar.set_description('Validate predictions:')
+pbar.set_description('Validate predictions')
 pbar.set_postfix(acc='0.0%')
 
-probs = []
+preds = []
 acc = 0.0
 i = 0
 for image, label in pbar:
   # make a prediction
   prob = fmodel.forward(image.numpy())
   pred = np.argmax(prob)
-  probs.append(prob)
+  preds.append(pred)
   i += 1
 
   # calculate current accuracy
   acc += torch.sum(pred == label.data)
   current_acc = acc * 100 / i
   pbar.set_postfix(acc='{:.2f}%'.format(current_acc))
-  # label_list.append(labels)
 
 acc = acc * 100 / dataset_size
 pbar.write('\nValidated with accuracy of: {:.2f}%'.format(acc))
 
 # %%
-# make a prediction
-probs = fmodel.forward(images.numpy())
-
-# plot predictions
-plt.figure(figsize=(N_COL * 2.5, N_ROW * 2))
-for i in range(LEN):
-  plt.subplot(N_ROW, N_COL, i + 1)
-  plt.imshow(img_to_np(images[i]))
-  plt.title('PREDICTION\n{}'.format(CLASS_NAMES[np.argmax(probs[i])]))
-
-# %%
 # perform an adversarial attack with FGSM
 attack = foolbox.attacks.FGSM(fmodel)
-# generate adversarial examples
-adversarials = attack(images.numpy(), labels.numpy())
+
+pbar = tqdm(dataset_loader)
+pbar.set_description('Generate adversarials')
+
+# iterate through images to generate adversarials
+adversarials = []
+for image, label in pbar:
+  adv = attack(image.numpy(), label.numpy())
+  adversarials.append(adv)
+
+# %%
 # make predictions on adversarial examples
-adv_probs = fmodel.forward(adversarials)
+pbar = tqdm(dataset_loader)
+pbar.set_description('Validate adversarials')
+pbar.set_postfix(acc='0.00%')
+adv_preds = []
+i = 0
+adv_acc = 0.0
+for _, label in pbar:
+  adv_prob = fmodel.forward(adversarials[i])
+  adv_pred = np.argmax(adv_prob)
+  adv_preds.append(adv_pred)
+  i += 1
+
+  adv_acc += torch.sum(adv_pred == label.data)
+  cur_adv_acc = adv_acc * 100 / i
+  pbar.set_postfix(acc='{:.2f}%'.format(cur_adv_acc))
+
+adv_acc = adv_acc * 100 / dataset_size
+pbar.write(
+    '\nModel predicted adversarials with an accuracy of: {:.2f}%'.format(adv_acc))
+# %%
+# Visualize adversarial examples with prediction
+# and ground truth side by side
+LEN = 4
+N_COL = 4
+N_ROW = 1
 
 # plot adversarial examples predictions
 plt.figure(figsize=(N_COL * 2.5, N_ROW * 2))
 for i in range(LEN):
   plt.subplot(N_ROW, N_COL, i + 1)
-  plt.imshow(np.transpose(adversarials[i], (1, 2, 0)))
-  plt.title('ADVERSARIAL\n{}'.format(CLASS_NAMES[np.argmax(adv_probs[i])]))
+  plt.imshow(np.transpose(adversarials[i].squeeze(), (1, 2, 0)))
+  plt.title('Adversarial\n{}'.format(CLASS_NAMES[adv_preds[i]]))
+
+
+# %%
