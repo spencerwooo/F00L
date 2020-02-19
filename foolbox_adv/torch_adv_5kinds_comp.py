@@ -213,3 +213,40 @@ for attack_method in means_of_attack:
   attack_acc_dict[attack_method] = 100 - adv_acc
 
 # %%
+# Plot statistics
+x_labels = [method for method in means_of_attack]
+x = np.arange(len(x_labels))
+width = 0.2
+fig, ax1 = plt.subplots(sharey=False)
+rect_acc = ax1.bar(x - width / 2 - 0.02,
+                   [attack_acc_dict[key] for key in attack_acc_dict],
+                   width, label='Attack effectiveness', color='#e4508f')
+ax1.set_xticks(x)
+ax1.set_xticklabels(x_labels)
+ax1.set_ylim(0, 100)
+ax1.set_ylabel('Attack effectiveness (%)', color='#e4508f')
+ax1.tick_params(axis='y', labelcolor='#e4508f')
+
+ax2 = ax1.twinx()
+rect_time = ax2.bar(x + width / 2 + 0.02,
+                    [time_elapsed_dict[key] for key in time_elapsed_dict],
+                    width, label='Cost of time', color='#556fb5')
+ax2.set_ylim(0, 200)
+ax2.set_ylabel('Attack time cost (s)', color='#556fb5')
+ax2.tick_params(axis='y', labelcolor='#556fb5')
+
+
+def auto_label(ax, rects, unit=None):
+  for rect in rects:
+    height = rect.get_height()
+    ax.annotate('{:.1f}{}'.format(height, unit),
+                xy=(rect.get_x() + rect.get_width() / 2, height),
+                xytext=(0, 3), textcoords="offset points", ha='center', va='bottom')
+
+
+auto_label(ax1, rect_acc, unit='%')
+auto_label(ax2, rect_time, unit='s')
+
+plt.show()
+
+# %%
