@@ -1,4 +1,4 @@
-name: adversarial-attacks
+name: adv
 channels:
   - pytorch
   - conda-forge

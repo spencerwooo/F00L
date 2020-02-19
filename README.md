@@ -19,13 +19,13 @@
 Create conda environment by file `environment.yml`:
 
 ```bash
-conda env create --name adversarial-attacks --file environment.yml
+conda env create --file environment.yml
 ```
 
-Enter conda environment `adversarial-attacks`:
+Enter conda environment `adv`:
 
 ```bash
-conda activate adversarial-attacks
+conda activate adv
 ```
 
 Run jupyter notebook in a browser.
