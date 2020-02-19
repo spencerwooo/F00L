@@ -10,6 +10,9 @@ Applying an adversarial attack on a pretrained ResNet18 model `resnet_imagenette
 
 Model weights: https://drive.google.com/open?id=1_YrCbnWwDMlFFRoldsv7PeoNf54yPeVW
 ImageNette: https://github.com/fastai/imagenette
+
+* NOTE: This file is intended to be ran using Python Interactive (VS Code)
+ with procedures instead of running as a whole document
 """
 
 # %%
@@ -23,7 +26,7 @@ import torchvision
 import torchvision.models as models
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 # pretrained model state_dict path
 MODEL_PATH = 'resnet_imagenette.pth'
@@ -34,8 +37,6 @@ CLASS_NAMES = ['tench', 'English springer', 'cassette player', 'chain saw', 'chu
 
 # instantiate model
 model = torchvision.models.resnet18(pretrained=True)
-for param in model.parameters():
-  param.requires_grad = False
 
 # add final linear layer for feature extraction
 num_features = model.fc.in_features
@@ -68,15 +69,18 @@ transform = transforms.Compose([
     transforms.ToTensor()
 ])
 
-class_start_indice = [indice * 200 for indice in range(0, 10)]
-images_in_class_indice = np.array(
-    [[j for j in range(k, k + 10)] for k in class_start_indice]).flatten()
 # training dataset path
 dataset_path = '../data/imagenette2-160/val'
 
 # load dataset with validation images
 dataset = torchvision.datasets.ImageFolder(
     root=dataset_path, transform=transform)
+
+# indice at which each class starts: [0, 200, 400 ... 1800]
+class_start_indice = [indice * 200 for indice in range(0, 10)]
+# grab 10 images from each class: [0, 1, 2 ... 9, 200, 201, 202 ... 1800, 1801, 1802 ... 1809]
+images_in_class_indice = np.array(
+    [[j for j in range(k, k + 10)] for k in class_start_indice]).flatten()
 
 # 1. get 10 images from 10 classes for a total of 100 images, or ...
 dataset = torch.utils.data.Subset(dataset, images_in_class_indice)
@@ -114,6 +118,7 @@ for i in range(LEN):
 
 # %%
 # Validate model's base prediction accuracy (about 97%)
+# takes about 5 seconds on GPU
 pbar = tqdm(dataset_loader)
 pbar.set_description('Validate predictions')
 pbar.set_postfix(acc='0.0%')
@@ -138,6 +143,7 @@ pbar.write('\nValidated with accuracy of: {:.2f}%'.format(acc))
 
 # %%
 # Perform an adversarial attack with FGSM
+# takes about 30 seconds on GPU
 tic = time.time()
 attack = foolbox.attacks.FGSM(fmodel)
 
@@ -158,7 +164,7 @@ for image, label in pbar:
 
 toc = time.time()
 time_elapsed = toc - tic
-pbar.write('\nAdversarials generated in: {:.2f}m {:.2f}s'.format(
+pbar.write('\nAdversarials generated in: {}m {:.2f}s'.format(
     time_elapsed // 60, time_elapsed % 60))
 
 # %%
@@ -166,6 +172,7 @@ pbar.write('\nAdversarials generated in: {:.2f}m {:.2f}s'.format(
 pbar = tqdm(dataset_loader)
 pbar.set_description('Validate adversarials')
 pbar.set_postfix(acc='0.00%')
+
 i = 0
 adv_acc = 0.0
 adv_preds = []
