@@ -114,18 +114,23 @@ pbar.write('\nValidated with accuracy of: {:.2f}%'.format(acc))
 # %%
 # Perform multiple attacks with different algorithms
 #
-# - FGSM: takes about 30 seconds on GPU
-# - DeepFool: takes about 3 minutes on GPU
-# - JSMA: takes about 49 minutes on GPU
+# - FGSM: takes about 30s on GPU with attack effectiveness of 82%
+# - DeepFool: takes about 3m on GPU with attack effectiveness of 93%
+# - JSMA: takes about 49m on GPU
+# - CW: takes about 3 hours on GPU
+# - MI-FGSM: takes about 30m on GPU with attack effectiveness of 100%
 
-means_of_attack = ['FGSM', 'DeepFool', 'JSMA']
+# means_of_attack = ['FGSM', 'DeepFool', 'JSMA', 'CW', 'MI-FGSM']
+means_of_attack = ['CW']
 
 
 def attack_switcher(att):
   switcher = {
       'FGSM': foolbox.attacks.GradientSignAttack(fmodel),
       'DeepFool': foolbox.attacks.DeepFoolAttack(fmodel),
-      'JSMA': foolbox.attacks.SaliencyMapAttack(fmodel)
+      'JSMA': foolbox.attacks.SaliencyMapAttack(fmodel),
+      'CW': foolbox.attacks.CarliniWagnerL2Attack(fmodel),
+      'MI-FGSM': foolbox.attacks.MomentumIterativeAttack(fmodel, distance=foolbox.distances.Linf)
   }
   return switcher.get(att)
 
@@ -156,7 +161,13 @@ for attack_method in means_of_attack:
       adv = attack(image.numpy(), label.numpy(), steps=5, subsample=5)
     elif attack_method == 'JSMA':
       # Saliency Map Attack
-      adv = attack(image.numpy(), label.numpy(), max_iter=100)
+      adv = attack(image.numpy(), label.numpy(), max_iter=1000)
+    elif attack_method == 'CW':
+      # L2 version of the Carlini & Wagner attack
+      adv = attack(image.numpy(), label.numpy())
+    elif attack_method == 'MI-FGSM':
+      # The Momentum Iterative Method attack
+      adv = attack(image.numpy(), label.numpy())
     else:
       raise Exception('Attack method not found.')
 
@@ -213,6 +224,12 @@ for attack_method in means_of_attack:
   attack_acc_dict[attack_method] = 100 - adv_acc
 
 # %%
+# get longest duration for attack to complete
+longest_time_used = 0
+for key in time_elapsed_dict:
+  if time_elapsed_dict[key] > longest_time_used:
+    longest_time_used =  time_elapsed_dict[key]
+
 # Plot statistics
 x_labels = [method for method in means_of_attack]
 x = np.arange(len(x_labels))
@@ -223,7 +240,7 @@ rect_acc = ax1.bar(x - width / 2 - 0.02,
                    width, label='Attack effectiveness', color='#e4508f')
 ax1.set_xticks(x)
 ax1.set_xticklabels(x_labels)
-ax1.set_ylim(0, 100)
+ax1.set_ylim(0, longest_time_used)
 ax1.set_ylabel('Attack effectiveness (%)', color='#e4508f')
 ax1.tick_params(axis='y', labelcolor='#e4508f')
 
@@ -231,7 +248,7 @@ ax2 = ax1.twinx()
 rect_time = ax2.bar(x + width / 2 + 0.02,
                     [time_elapsed_dict[key] for key in time_elapsed_dict],
                     width, label='Cost of time', color='#556fb5')
-ax2.set_ylim(0, 200)
+ax2.set_ylim(0, 3000)
 ax2.set_ylabel('Attack time cost (s)', color='#556fb5')
 ax2.tick_params(axis='y', labelcolor='#556fb5')
 
