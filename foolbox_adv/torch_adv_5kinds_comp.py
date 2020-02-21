@@ -20,14 +20,16 @@ ImageNette: https://github.com/fastai/imagenette
 import time
 
 import foolbox
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
 import torchvision.models as models
 import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
 from tqdm import tqdm
+
+import cv2
 
 # pretrained model state_dict path
 MODEL_PATH = 'resnet_imagenette.pth'
@@ -121,7 +123,7 @@ pbar.write('\nValidated with accuracy of: {:.2f}%'.format(acc))
 # - MI-FGSM: takes about 30m on GPU with attack effectiveness of 100%
 
 # means_of_attack = ['FGSM', 'DeepFool', 'JSMA', 'CW', 'MI-FGSM']
-means_of_attack = ['CW']
+means_of_attack = ['FGSM']
 
 
 def attack_switcher(att):
@@ -189,7 +191,32 @@ for attack_method in means_of_attack:
   time_elapsed_dict[attack_method] = time_elapsed
 
 # %%
+# resize adversarials
+resize_scale = 0.5
+interpolation = cv2.INTER_LINEAR
+resized_adversarials_dict = {attack_method: []
+                             for attack_method in means_of_attack}
+
+for attack_method in means_of_attack:
+  for adv_batch in adversarials_dict[attack_method]:
+    resized_adv_batch = []
+    for adv in adv_batch:
+      # opencv take images as channels last (213, 213, 3)
+      # while our model treats images as channels first (3, 213, 213)
+      resized_adv = cv2.resize(np.moveaxis(adv, 0, 2), (0, 0),
+                               fx=resize_scale, fy=resize_scale,
+                               interpolation=interpolation)
+      resized_adv_batch.append(np.moveaxis(resized_adv, 2, 0))
+    resized_adversarials_dict[attack_method].append(
+        np.array(resized_adv_batch))
+
+# %%
 # Validate generated adversarial examples
+
+# Validation adversarial set:
+# - control group: `adversarials_dict`
+# - downscale x0.5: `resized_adversarials_dict`
+validation_adv_set = resized_adversarials_dict
 
 # effectiveness of each attack method
 attack_acc_dict = {att: None for att in means_of_attack}
@@ -201,7 +228,7 @@ for attack_method in means_of_attack:
   pbar = tqdm(dataset_loader)
   pbar.set_description('Validate {:>8}'.format(attack_method))
   pbar.set_postfix(acc='0.00%')
-  adversarials = adversarials_dict[attack_method]
+  adversarials = validation_adv_set[attack_method]
 
   for i, (_, label) in enumerate(pbar):
     adv_prob = fmodel.forward(adversarials[i])
@@ -228,7 +255,7 @@ for attack_method in means_of_attack:
 longest_time_used = 0
 for key in time_elapsed_dict:
   if time_elapsed_dict[key] > longest_time_used:
-    longest_time_used =  time_elapsed_dict[key]
+    longest_time_used = time_elapsed_dict[key]
 
 # Plot statistics
 x_labels = [method for method in means_of_attack]
