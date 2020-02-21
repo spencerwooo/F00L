@@ -11,8 +11,10 @@ dependencies:
   - pylint
   - autopep8
   - notebook
+  - jupyterlab
   - pytorch
   - torchvision
+  - opencv
   - cudatoolkit=10.1
   - tqdm
   - pip
