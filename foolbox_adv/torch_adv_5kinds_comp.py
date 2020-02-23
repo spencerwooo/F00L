@@ -1,21 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""
-Comparison among five different attack algorithms
-
-- Attack algorithms: FGSM,
-- Target: pretrained ResNet18 model with ImageNet weights targeted on
-  ImageNette, a subset of ImageNet: `resnet_imagenette.pth`
-- Parameters to compare: attack effectiveness, adversarial generation time
-
-Model weights: https://drive.google.com/open?id=1_YrCbnWwDMlFFRoldsv7PeoNf54yPeVW
-ImageNette: https://github.com/fastai/imagenette
-
-* NOTE: This file is intended to be ran using Python Interactive (VS Code)
- with procedures instead of running as a whole document
-"""
-
 # %%
 import time
 
@@ -48,6 +30,7 @@ model.load_state_dict(torch.load(MODEL_PATH))
 model.eval()
 
 print('Instantiated ConvNET model: ResNet18ImageNette.')
+
 
 # %%
 # use GPU if available
@@ -90,6 +73,7 @@ dataset_size = len(dataset)
 print('Loaded data from: {} with a total of {} images.'.format(
     dataset_path, dataset_size))
 
+
 # %%
 # Validate model's base prediction accuracy (about 97%)
 # takes about 5 seconds on GPU
@@ -113,6 +97,7 @@ for i, (image, label) in enumerate(pbar):
 acc = acc * 100 / dataset_size
 pbar.write('\nValidated with accuracy of: {:.2f}%'.format(acc))
 
+
 # %%
 # Perform multiple attacks with different algorithms
 #
@@ -123,7 +108,7 @@ pbar.write('\nValidated with accuracy of: {:.2f}%'.format(acc))
 # - MI-FGSM: takes about 30m on GPU with attack effectiveness of 100%
 
 # means_of_attack = ['FGSM', 'DeepFool', 'JSMA', 'CW', 'MI-FGSM']
-means_of_attack = ['FGSM']
+means_of_attack = ['FGSM', 'DeepFool']
 
 
 def attack_switcher(att):
@@ -190,10 +175,22 @@ for attack_method in means_of_attack:
   adversarials_dict[attack_method] = adversarials
   time_elapsed_dict[attack_method] = time_elapsed
 
+
 # %%
 # resize adversarials
-resize_scale = 0.5
-interpolation = cv2.INTER_LINEAR
+
+# resize scale: [0.5, 2]
+resize_scale = 2
+# interpolation methods
+interpolation_method_name = 'INTER_NEAREST'
+interpolation_methods = {
+    'INTER_NEAREST': cv2.INTER_NEAREST,
+    'INTER_LINEAR': cv2.INTER_LINEAR,
+    'INTER_AREA': cv2.INTER_AREA,
+    'INTER_CUBIC': cv2.INTER_CUBIC,
+    'INTER_LANCZOS4': cv2.INTER_LANCZOS4
+}
+interpolation = interpolation_methods[interpolation_method_name]
 resized_adversarials_dict = {attack_method: []
                              for attack_method in means_of_attack}
 
@@ -210,13 +207,22 @@ for attack_method in means_of_attack:
     resized_adversarials_dict[attack_method].append(
         np.array(resized_adv_batch))
 
+print('Done! Resized adversarials using {} with a scale of {}.'.format(interpolation_method_name,
+                                                                       resize_scale))
+
+
 # %%
 # Validate generated adversarial examples
+validate_control_group = False
 
-# Validation adversarial set:
+# Validation adversarial set
+validation_adv_set = None
 # - control group: `adversarials_dict`
 # - downscale x0.5: `resized_adversarials_dict`
-validation_adv_set = resized_adversarials_dict
+if validate_control_group:
+  validation_adv_set = adversarials_dict
+else:
+  validation_adv_set = resized_adversarials_dict
 
 # effectiveness of each attack method
 attack_acc_dict = {att: None for att in means_of_attack}
@@ -250,6 +256,22 @@ for attack_method in means_of_attack:
   # 100 - accuracy = effectiveness of said attack (percentage)
   attack_acc_dict[attack_method] = 100 - adv_acc
 
+
+# %%
+# print statistics
+# image manipulation: control_group, interpolation methods x 5, scale = [0.5, 2]
+manipulation_method = 'Control group' if validate_control_group == True else \
+                      'Interpolation: {}, scale: x{}'.format(interpolation_method_name,
+                                                             resize_scale)
+
+print(manipulation_method)
+for attack_method in means_of_attack:
+  print('{:8} | success rate: {:>4.1f}% | time cost: {:>6.2f}s'.format(
+      attack_method,
+      attack_acc_dict[attack_method],
+      time_elapsed_dict[attack_method]))
+
+
 # %%
 # get longest duration for attack to complete
 longest_time_used = 0
@@ -267,7 +289,7 @@ rect_acc = ax1.bar(x - width / 2 - 0.02,
                    width, label='Attack effectiveness', color='#e4508f')
 ax1.set_xticks(x)
 ax1.set_xticklabels(x_labels)
-ax1.set_ylim(0, longest_time_used)
+ax1.set_ylim(0, 100)
 ax1.set_ylabel('Attack effectiveness (%)', color='#e4508f')
 ax1.tick_params(axis='y', labelcolor='#e4508f')
 
@@ -275,7 +297,7 @@ ax2 = ax1.twinx()
 rect_time = ax2.bar(x + width / 2 + 0.02,
                     [time_elapsed_dict[key] for key in time_elapsed_dict],
                     width, label='Cost of time', color='#556fb5')
-ax2.set_ylim(0, 3000)
+ax2.set_ylim(0, longest_time_used * 1.2)
 ax2.set_ylabel('Attack time cost (s)', color='#556fb5')
 ax2.tick_params(axis='y', labelcolor='#556fb5')
 
@@ -290,7 +312,8 @@ def auto_label(ax, rects, unit=None):
 
 auto_label(ax1, rect_acc, unit='%')
 auto_label(ax2, rect_time, unit='s')
-
+plt.title(manipulation_method)
 plt.show()
+
 
 # %%
