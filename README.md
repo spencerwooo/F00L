@@ -60,12 +60,12 @@ You can download ImageNette training and validation images here: [160 px downloa
 
 ## Structure
 
-|              Directory               | Purpose                                                                                                                                                                                                                                                   |
-| :----------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|           [./misc](./misc)           | All are sample scripts where I follow examples from official PyTorch / Keras tutorials and try to recreate the same results.                                                                                                                              |
-| [./resnet_foolbox](./resnet_foolbox) | <ul><li>Creating a ResNet18 ConvNet by transfer training the default ResNet18 model against the ImageNette dataset.</li><li>Attacking the trained ConvNet with Foolbox, measuring the effectiveness of said attack after image transformations.</li></ul> |
-|    [./vgg_foolbox](./vgg_foolbox)    | <ul><li>Creating a VGG11 ConvNet by transfer training the default VGG11 model against the ImageNette dataset.</li><li>Attacking the trained ConvNet with Foolbox, measuring the effectiveness of said attack after image transformations.</li></ul>       |
-|                 ...                  | ...                                                                                                                                                                                                                                                       |
+|              Directory               | Purpose                                                                                                                                                                                                                                  |
+| :----------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|           [./misc](./misc)           | All are sample scripts where I follow examples from official PyTorch / Keras tutorials and try to recreate the same results.                                                                                                             |
+| [./resnet_foolbox](./resnet_foolbox) | 1. Creating a ResNet18 ConvNet by transfer training the default ResNet18 model against the ImageNette dataset.<br>2. Attacking the trained ConvNet with Foolbox, measuring the effectiveness of said attack after image transformations. |
+|    [./vgg_foolbox](./vgg_foolbox)    | 1. Creating a VGG11 ConvNet by transfer training the default VGG11 model against the ImageNette dataset.<br>2. Attacking the trained ConvNet with Foolbox, measuring the effectiveness of said attack after image transformations.       |
+|                 ...                  | ...                                                                                                                                                                                                                                      |
 
 ## Building and running
 
