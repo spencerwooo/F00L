@@ -1,7 +1,7 @@
 <div align="center">
   <img src="./assets/banner-adv.png" width="600px" height="auto" alt="adversarials" />
 
-  <h2>Final Year Project</h2>
+  <h1>Adversarial Attacks</h1>
 
   🎃 *Generating adversarial examples to trick the neural network.*
 
@@ -10,6 +10,8 @@
   ![](https://img.shields.io/badge/license-MIT-black?&style=flat-square)
 
  </div>
+
+<h6>This is my final year project. I am investigating the impact of image scaling on the effectiveness of adversarial attacks targeted on ConvNets (or other neural networks).</h6>
 
 ## Experiment overview
 
