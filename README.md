@@ -20,11 +20,11 @@
 
 ## Experiment overview
 
-**Step 1:** Using PyTorch to load train / validation datasets, transfer train ConvNets for further experiments.
+**Step 1:** Using PyTorch to load train/validation datasets, transfer train ConvNets for further experiments.
 
-**Step 2:** Using Foolbox to generate adversarial examples in order to trick the ConvNets into mis-classifying images from the validation dataset.
+**Step 2:** Using Foolbox to generate adversarial examples to trick the ConvNets into misclassifying images from the validation dataset.
 
-**Step 3:** Using different interpolation algorithms to scale adversarials and measure the impact of this transformation on the effectiveness of the attack on different models.
+**Step 3:** Using different interpolation algorithms to scale adversaries and measure the impact of this transformation on the effectiveness of the attack on different models.
 
 ### Training and evaluation dataset
 
@@ -74,7 +74,7 @@ You can download ImageNette training and validation images here: [160 px downloa
 
 ## Building and running
 
-Create conda environment by file `environment.yml`:
+Create a new conda environment by file `environment.yml`:
 
 ```bash
 conda env create --file environment.yml
