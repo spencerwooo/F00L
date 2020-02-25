@@ -9,7 +9,7 @@ dependencies:
   - numpy
   - matplotlib
   - pylint
-  - autopep8
+  - yapf
   - notebook
   - jupyterlab
   - pytorch

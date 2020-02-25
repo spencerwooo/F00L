@@ -17,8 +17,10 @@ import cv2
 MODEL_PATH = 'resnet_imagenette.pth'
 
 # 10 classes
-CLASS_NAMES = ['tench', 'English springer', 'cassette player', 'chain saw', 'church',
-               'French horn', 'garbage truck', 'gas pump', 'golf ball', 'parachute']
+CLASS_NAMES = [
+    'tench', 'English springer', 'cassette player', 'chain saw', 'church', 'French horn', 'garbage truck', 'gas pump',
+    'golf ball', 'parachute'
+]
 
 # instantiate model
 model = torchvision.models.resnet18(pretrained=True)
@@ -31,35 +33,26 @@ model.eval()
 
 print('Instantiated ConvNET model: ResNet18ImageNette.')
 
-
 # %%
 # use GPU if available
 if torch.cuda.is_available():
   model = model.cuda()
 
 # instantiate Foolbox wrapper
-preprocessing = dict(mean=[0.485, 0.456, 0.406],
-                     std=[0.229, 0.224, 0.225], axis=-3)
+preprocessing = dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3)
 
-fmodel = foolbox.models.PyTorchModel(model, bounds=(0, 1),
-                                     num_classes=10,
-                                     preprocessing=preprocessing)
+fmodel = foolbox.models.PyTorchModel(model, bounds=(0, 1), num_classes=10, preprocessing=preprocessing)
 
 # load validation images
-transform = transforms.Compose([
-    transforms.Resize((213, 213)),
-    transforms.ToTensor()
-])
+transform = transforms.Compose([transforms.Resize((213, 213)), transforms.ToTensor()])
 
 dataset_path = '../data/imagenette2-160/val'
-dataset = torchvision.datasets.ImageFolder(
-    root=dataset_path, transform=transform)
+dataset = torchvision.datasets.ImageFolder(root=dataset_path, transform=transform)
 
 # indice at which each class starts: [0, 200, 400 ... 1800]
 class_start_indice = [indice * 200 for indice in range(0, 10)]
 # grab 10 images from each class: [0, 1, 2 ... 9, 200, 201, 202 ... 1800, 1801, 1802 ... 1809]
-images_in_class_indice = np.array(
-    [[j for j in range(k, k + 10)] for k in class_start_indice]).flatten()
+images_in_class_indice = np.array([[j for j in range(k, k + 10)] for k in class_start_indice]).flatten()
 
 # size of each batch
 BATCH_SIZE = 4
@@ -70,9 +63,7 @@ dataset = torch.utils.data.Subset(dataset, images_in_class_indice)
 dataset_loader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE)
 dataset_size = len(dataset)
 
-print('Loaded data from: {} with a total of {} images.'.format(
-    dataset_path, dataset_size))
-
+print('Loaded data from: {} with a total of {} images.'.format(dataset_path, dataset_size))
 
 # %%
 # Validate model's base prediction accuracy (about 97%)
@@ -97,7 +88,6 @@ for i, (image, label) in enumerate(pbar):
 acc = acc * 100 / dataset_size
 pbar.write('\nValidated with accuracy of: {:.2f}%'.format(acc))
 
-
 # %%
 # Perform multiple attacks with different algorithms
 #
@@ -113,10 +103,10 @@ means_of_attack = ['FGSM', 'DeepFool']
 
 def attack_switcher(att):
   switcher = {
-      'FGSM': foolbox.attacks.GradientSignAttack(fmodel),
-      'DeepFool': foolbox.attacks.DeepFoolAttack(fmodel),
-      'JSMA': foolbox.attacks.SaliencyMapAttack(fmodel),
-      'CW': foolbox.attacks.CarliniWagnerL2Attack(fmodel),
+      'FGSM': foolbox.attacks.GradientSignAttack(fmodel, distance=foolbox.distances.Linf),
+      'DeepFool': foolbox.attacks.DeepFoolAttack(fmodel, distance=foolbox.distances.Linf),
+      'JSMA': foolbox.attacks.SaliencyMapAttack(fmodel, distance=foolbox.distances.Linf),
+      'CW': foolbox.attacks.CarliniWagnerL2Attack(fmodel, distance=foolbox.distances.Linf),
       'MI-FGSM': foolbox.attacks.MomentumIterativeAttack(fmodel, distance=foolbox.distances.Linf)
   }
   return switcher.get(att)
@@ -175,7 +165,6 @@ for attack_method in means_of_attack:
   adversarials_dict[attack_method] = adversarials
   time_elapsed_dict[attack_method] = time_elapsed
 
-
 # %%
 # resize adversarials
 
@@ -191,8 +180,7 @@ interpolation_methods = {
     'INTER_LANCZOS4': cv2.INTER_LANCZOS4
 }
 interpolation = interpolation_methods[interpolation_method_name]
-resized_adversarials_dict = {attack_method: []
-                             for attack_method in means_of_attack}
+resized_adversarials_dict = {attack_method: [] for attack_method in means_of_attack}
 
 for attack_method in means_of_attack:
   for adv_batch in adversarials_dict[attack_method]:
@@ -201,15 +189,13 @@ for attack_method in means_of_attack:
       # opencv take images as channels last (213, 213, 3)
       # while our model treats images as channels first (3, 213, 213)
       resized_adv = cv2.resize(np.moveaxis(adv, 0, 2), (0, 0),
-                               fx=resize_scale, fy=resize_scale,
+                               fx=resize_scale,
+                               fy=resize_scale,
                                interpolation=interpolation)
       resized_adv_batch.append(np.moveaxis(resized_adv, 2, 0))
-    resized_adversarials_dict[attack_method].append(
-        np.array(resized_adv_batch))
+    resized_adversarials_dict[attack_method].append(np.array(resized_adv_batch))
 
-print('Done! Resized adversarials using {} with a scale of {}.'.format(interpolation_method_name,
-                                                                       resize_scale))
-
+print('Done! Resized adversarials using {} with a scale of {}.'.format(interpolation_method_name, resize_scale))
 
 # %%
 # Validate generated adversarial examples
@@ -256,21 +242,17 @@ for attack_method in means_of_attack:
   # 100 - accuracy = effectiveness of said attack (percentage)
   attack_acc_dict[attack_method] = 100 - adv_acc
 
-
 # %%
 # print statistics
 # image manipulation: control_group, interpolation methods x 5, scale = [0.5, 2]
-manipulation_method = 'Control group' if validate_control_group == True else \
+manipulation_method = 'Control group' if validate_control_group else \
                       'Interpolation: {}, scale: x{}'.format(interpolation_method_name,
                                                              resize_scale)
 
 print(manipulation_method)
 for attack_method in means_of_attack:
-  print('{:8} | success rate: {:>4.1f}% | time cost: {:>6.2f}s'.format(
-      attack_method,
-      attack_acc_dict[attack_method],
-      time_elapsed_dict[attack_method]))
-
+  print('{:8} | success rate: {:>4.1f}% | time cost: {:>6.2f}s'.format(attack_method, attack_acc_dict[attack_method],
+                                                                       time_elapsed_dict[attack_method]))
 
 # %%
 # get longest duration for attack to complete
@@ -284,9 +266,10 @@ x_labels = [method for method in means_of_attack]
 x = np.arange(len(x_labels))
 width = 0.2
 fig, ax1 = plt.subplots(sharey=False)
-rect_acc = ax1.bar(x - width / 2 - 0.02,
-                   [attack_acc_dict[key] for key in attack_acc_dict],
-                   width, label='Attack effectiveness', color='#e4508f')
+rect_acc = ax1.bar(x - width / 2 - 0.02, [attack_acc_dict[key] for key in attack_acc_dict],
+                   width,
+                   label='Attack effectiveness',
+                   color='#e4508f')
 ax1.set_xticks(x)
 ax1.set_xticklabels(x_labels)
 ax1.set_ylim(0, 100)
@@ -294,9 +277,10 @@ ax1.set_ylabel('Attack effectiveness (%)', color='#e4508f')
 ax1.tick_params(axis='y', labelcolor='#e4508f')
 
 ax2 = ax1.twinx()
-rect_time = ax2.bar(x + width / 2 + 0.02,
-                    [time_elapsed_dict[key] for key in time_elapsed_dict],
-                    width, label='Cost of time', color='#556fb5')
+rect_time = ax2.bar(x + width / 2 + 0.02, [time_elapsed_dict[key] for key in time_elapsed_dict],
+                    width,
+                    label='Cost of time',
+                    color='#556fb5')
 ax2.set_ylim(0, longest_time_used * 1.2)
 ax2.set_ylabel('Attack time cost (s)', color='#556fb5')
 ax2.tick_params(axis='y', labelcolor='#556fb5')
@@ -307,13 +291,15 @@ def auto_label(ax, rects, unit=None):
     height = rect.get_height()
     ax.annotate('{:.1f}{}'.format(height, unit),
                 xy=(rect.get_x() + rect.get_width() / 2, height),
-                xytext=(0, 3), textcoords="offset points", ha='center', va='bottom')
+                xytext=(0, 3),
+                textcoords="offset points",
+                ha='center',
+                va='bottom')
 
 
 auto_label(ax1, rect_acc, unit='%')
 auto_label(ax2, rect_time, unit='s')
 plt.title(manipulation_method)
 plt.show()
-
 
 # %%

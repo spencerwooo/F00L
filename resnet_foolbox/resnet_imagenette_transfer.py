@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 Training a ResNet18 CNN and attacking it with Foolbox:
 
@@ -51,10 +50,14 @@ def import_dataset(dataset_path):
       transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
   ])
 
-  image_datasets = {x: torchvision.datasets.ImageFolder(root=os.path.join(
-      dataset_path, x), transform=transform) for x in ['train', 'val']}
-  data_loaders = {x: torch.utils.data.DataLoader(
-      image_datasets[x], batch_size=4, shuffle=True, num_workers=0) for x in ['train', 'val']}
+  image_datasets = {
+      x: torchvision.datasets.ImageFolder(root=os.path.join(dataset_path, x), transform=transform)
+      for x in ['train', 'val']
+  }
+  data_loaders = {
+      x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4, shuffle=True, num_workers=0)
+      for x in ['train', 'val']
+  }
   data_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
 
   return data_loaders, data_sizes
@@ -113,8 +116,7 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       running_corrects = 0
 
       pbar = tqdm(data_loaders[phase], ncols=80)
-      pbar.set_description(
-          'Epoch: {}/{} - {:>5}'.format(epoch + 1, epoches, phase))
+      pbar.set_description('Epoch: {}/{} - {:>5}'.format(epoch + 1, epoches, phase))
       pbar.set_postfix(loss='')
 
       # iterate over data
@@ -140,8 +142,7 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
         running_corrects += torch.sum(preds == labels.data)
 
         # update progress
-        pbar.set_postfix(loss='{:.2f}%'.format(
-            loss.detach().cpu().numpy()))
+        pbar.set_postfix(loss='{:.2f}%'.format(loss.detach().cpu().numpy()))
 
       if phase == 'train':
         scheduler.step()
@@ -170,8 +171,7 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
   time_elapsed = toc - tic
 
   # print statistics
-  print('\nTraining completed in {:.0f}m {:.0f}s'.format(
-      time_elapsed // 60, time_elapsed % 60))
+  print('\nTraining completed in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
   print('Best validation accuracy: {:4f} %'.format(best_acc * 100))
 
   # send notifications
@@ -192,8 +192,10 @@ if __name__ == "__main__":
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
   # define class names
-  class_names = ['tench', 'English springer', 'cassette player', 'chain saw', 'church',
-                 'French horn', 'garbage truck', 'gas pump', 'golf ball', 'parachute']
+  class_names = [
+      'tench', 'English springer', 'cassette player', 'chain saw', 'church', 'French horn', 'garbage truck', 'gas pump',
+      'golf ball', 'parachute'
+  ]
 
   # path to dataset
   dataset_path = '../data/imagenette2-160'
@@ -226,18 +228,22 @@ if __name__ == "__main__":
 
   # define criterion, optimizer and scheduler
   criterion = nn.CrossEntropyLoss()
-  optimizer_conv = optim.SGD(
-      model_conv.fc.parameters(), lr=0.001, momentum=0.9)
-  exp_lr_scheduler = lr_scheduler.StepLR(
-      optimizer=optimizer_conv, step_size=7, gamma=0.1)
+  optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=0.001, momentum=0.9)
+  exp_lr_scheduler = lr_scheduler.StepLR(optimizer=optimizer_conv, step_size=7, gamma=0.1)
 
   # %%
   # Train and evaluate model
   # 8 epoches roughly takes an hour of training and evaluation or less on GPU,
   #   with an accuracy of around 97%
   model_epoches = 8
-  model_conv, loss, acc = train_model(device, data_loaders, data_sizes, model_conv,
-                                      criterion, optimizer_conv, exp_lr_scheduler, epoches=model_epoches)
+  model_conv, loss, acc = train_model(device,
+                                      data_loaders,
+                                      data_sizes,
+                                      model_conv,
+                                      criterion,
+                                      optimizer_conv,
+                                      exp_lr_scheduler,
+                                      epoches=model_epoches)
 
   # save trained model
   now = datetime.now()
@@ -260,6 +266,5 @@ if __name__ == "__main__":
   plt.title('Validation statistics')
   plt.legend()
   plt.show()
-
 
 # %%

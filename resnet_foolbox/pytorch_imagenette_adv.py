@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 Applying an adversarial attack on a pretrained ResNet18 model `resnet_imagenette`:
 
@@ -32,8 +31,10 @@ from tqdm import tqdm
 MODEL_PATH = 'resnet_imagenette.pth'
 
 # 10 classes
-CLASS_NAMES = ['tench', 'English springer', 'cassette player', 'chain saw', 'church',
-               'French horn', 'garbage truck', 'gas pump', 'golf ball', 'parachute']
+CLASS_NAMES = [
+    'tench', 'English springer', 'cassette player', 'chain saw', 'church', 'French horn', 'garbage truck', 'gas pump',
+    'golf ball', 'parachute'
+]
 
 # instantiate model
 model = torchvision.models.resnet18(pretrained=True)
@@ -55,32 +56,24 @@ if torch.cuda.is_available():
   model = model.cuda()
 
 # define preprocessing procedures (Foolbox)
-preprocessing = dict(mean=[0.485, 0.456, 0.406],
-                     std=[0.229, 0.224, 0.225], axis=-3)
+preprocessing = dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3)
 
 # define Foolbox wrapper (Foolbox)
-fmodel = foolbox.models.PyTorchModel(model, bounds=(0, 1),
-                                     num_classes=10,
-                                     preprocessing=preprocessing)
+fmodel = foolbox.models.PyTorchModel(model, bounds=(0, 1), num_classes=10, preprocessing=preprocessing)
 
 # resize image to size 213 * 213
-transform = transforms.Compose([
-    transforms.Resize((213, 213)),
-    transforms.ToTensor()
-])
+transform = transforms.Compose([transforms.Resize((213, 213)), transforms.ToTensor()])
 
 # training dataset path
 dataset_path = '../data/imagenette2-160/val'
 
 # load dataset with validation images
-dataset = torchvision.datasets.ImageFolder(
-    root=dataset_path, transform=transform)
+dataset = torchvision.datasets.ImageFolder(root=dataset_path, transform=transform)
 
 # indice at which each class starts: [0, 200, 400 ... 1800]
 class_start_indice = [indice * 200 for indice in range(0, 10)]
 # grab 10 images from each class: [0, 1, 2 ... 9, 200, 201, 202 ... 1800, 1801, 1802 ... 1809]
-images_in_class_indice = np.array(
-    [[j for j in range(k, k + 10)] for k in class_start_indice]).flatten()
+images_in_class_indice = np.array([[j for j in range(k, k + 10)] for k in class_start_indice]).flatten()
 
 # 1. get 10 images from 10 classes for a total of 100 images, or ...
 dataset = torch.utils.data.Subset(dataset, images_in_class_indice)
@@ -93,8 +86,7 @@ dataset_loader = torch.utils.data.DataLoader(dataset)
 # get dataset size (length)
 dataset_size = len(dataset)
 
-print('Loaded data from: {} with a total of {} images.'.format(
-    dataset_path, dataset_size))
+print('Loaded data from: {} with a total of {} images.'.format(dataset_path, dataset_size))
 
 # %%
 # show sample images from ImageNette
@@ -164,8 +156,7 @@ for image, label in pbar:
 
 toc = time.time()
 time_elapsed = toc - tic
-pbar.write('\nAdversarials generated in: {}m {:.2f}s'.format(
-    time_elapsed // 60, time_elapsed % 60))
+pbar.write('\nAdversarials generated in: {}m {:.2f}s'.format(time_elapsed // 60, time_elapsed % 60))
 
 # %%
 # make predictions on adversarial examples
@@ -193,8 +184,7 @@ for _, label in pbar:
   pbar.set_postfix(acc='{:.2f}%'.format(cur_adv_acc))
 
 adv_acc = adv_acc * 100 / dataset_size
-pbar.write(
-    '\nModel predicted adversarials with an accuracy of: {:.2f}%'.format(adv_acc))
+pbar.write('\nModel predicted adversarials with an accuracy of: {:.2f}%'.format(adv_acc))
 
 # %%
 # Index image and labels to access them with indices
@@ -222,7 +212,6 @@ for i, indice in enumerate(VISUALIZE_IMAGE_INDICE):
   plt.imshow(np.transpose(visualize_images[indice], (1, 2, 0)))
   plt.title('ground_truth:{}'.format(CLASS_NAMES[visualize_labels[indice]]))
 
-
 for i, indice in enumerate(VISUALIZE_IMAGE_INDICE):
   plt.subplot(N_ROW, N_COL, LEN + i + 1)
   plt.imshow(np.transpose(adversarials[indice].squeeze(), (1, 2, 0)))
@@ -230,8 +219,7 @@ for i, indice in enumerate(VISUALIZE_IMAGE_INDICE):
   # if attack success - title green; else - title red
   color = ('#36b37e' if not preds[indice] == adv_preds[indice] else '#ff3333')
   # plot prediction / adversarial side by side
-  plt.title('og_pred:{}\nadv_pred:{}'.format(
-      CLASS_NAMES[preds[indice]], CLASS_NAMES[adv_preds[indice]]), color=color)
+  plt.title('og_pred:{}\nadv_pred:{}'.format(CLASS_NAMES[preds[indice]], CLASS_NAMES[adv_preds[indice]]), color=color)
 
 plt.show()
 
