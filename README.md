@@ -1,11 +1,12 @@
-<img src="https://i.loli.net/2020/02/26/SAx6ejplMbQovNG.png" align="right" width="120px" height="120px" alt="f00l!">
+<img src="https://i.loli.net/2020/02/26/SAx6ejplMbQovNG.png" align="right" width="125px" height="auto" alt="f00l!">
 
 <h1>The Robustness of Adversarial Examples</h1>
 
-![](https://img.shields.io/badge/using-PyTorch-ee4c2c?logo=PyTorch&logoColor=white&style=flat-square)
-![](https://img.shields.io/badge/python-3.7.6-4381b2?logo=python&logoColor=white&style=flat-square)
-![](https://img.shields.io/badge/built%20with-Jupyter-f37626?logo=Jupyter&logoColor=white&style=flat-square)
-![](https://img.shields.io/badge/license-MIT-black?&style=flat-square)
+![](https://img.shields.io/badge/uses-PyTorch-5b8c85?logo=PyTorch&logoColor=white)
+![](https://img.shields.io/badge/python-3.7.6-297ca0?logo=python&logoColor=white)
+![](https://img.shields.io/badge/lab-Jupyter-ec9b3b?logo=Jupyter&logoColor=white)
+![](https://img.shields.io/badge/GPU-2080Ti-76B900?logo=NVIDIA&logoColor=white)
+![](https://img.shields.io/badge/license-MIT-434e52?)
 
 <h6>This is my final year project. I am investigating the impact of image scaling on the effectiveness of adversarial attacks targeted on ConvNets (or other neural networks).</h6>
 
