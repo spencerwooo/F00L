@@ -1,17 +1,22 @@
-<div align="center">
-  <img src="./assets/banner-adv.png" width="600px" height="auto" alt="adversarials" />
+<h1>🎃 The Robustness of Adversarial Examples</h1>
 
-  <h1>Adversarial Attacks</h1>
-
-  🎃 *Generating adversarial examples to trick the neural network.*
-
-  ![](https://img.shields.io/badge/python-3.7.6-4381b2?logo=python&logoColor=white&style=flat-square)
-  ![](https://img.shields.io/badge/using-PyTorch-ee4c2c?logo=PyTorch&logoColor=white&style=flat-square)
-  ![](https://img.shields.io/badge/license-MIT-black?&style=flat-square)
-
- </div>
+![](https://img.shields.io/badge/using-PyTorch-ee4c2c?logo=PyTorch&logoColor=white&style=flat-square)
+![](https://img.shields.io/badge/python-3.7.6-4381b2?logo=python&logoColor=white&style=flat-square)
+![](https://img.shields.io/badge/built%20with-Jupyter-f37626?logo=Jupyter&logoColor=white&style=flat-square)
+![](https://img.shields.io/badge/license-MIT-black?&style=flat-square)
 
 <h6>This is my final year project. I am investigating the impact of image scaling on the effectiveness of adversarial attacks targeted on ConvNets (or other neural networks).</h6>
+
+## Table of contents
+
+- [Table of contents](#table-of-contents)
+- [Experiment overview](#experiment-overview)
+  - [Training and evaluation dataset](#training-and-evaluation-dataset)
+  - [Target models](#target-models)
+  - [Attack methods (non-targeted)](#attack-methods-non-targeted)
+  - [Image scaling](#image-scaling)
+- [Structure](#structure)
+- [Building and running](#building-and-running)
 
 ## Experiment overview
 
@@ -38,10 +43,10 @@ You can download ImageNette training and validation images here: [160 px downloa
 
 **White-box attack:**
 
-- FGSM
-- DeepFool
+- FGSM (GradientSignAttack)
+- DeepFool (DeepFoolAttack)
 - JSMA (SaliencyMapAttack)
-- CW
+- CW (CarliniWagnerL2Attack)
 - MI-FGSM (MomentumIterativeAttack)
 
 **Black-box attack:**
@@ -52,11 +57,11 @@ You can download ImageNette training and validation images here: [160 px downloa
 ### Image scaling
 
 - Control Group (×1)
-- Nearest-neighbor: `interpolation=cv2.INTER_NEAREST` (×2, ×0.5)
-- Bi-linear: `interpolation=cv2.INTER_LINEAR` (×2, ×0.5)
-- Pixel area relation: `interpolation=cv2.INTER_AREA` (×2, ×0.5)
-- Bi-cubic: `interpolation=cv2.INTER_CUBIC` (×2, ×0.5)
-- Lanczos: `interpolation=cv2.INTER_LANCZOS4` (×2, ×0.5)
+- Nearest-neighbor: `interpolation=cv2.INTER_NEAREST` (×2 | ×0.5)
+- Bi-linear: `interpolation=cv2.INTER_LINEAR` (×2 | ×0.5)
+- Pixel area relation: `interpolation=cv2.INTER_AREA` (×2 | ×0.5)
+- Bi-cubic: `interpolation=cv2.INTER_CUBIC` (×2 | ×0.5)
+- Lanczos: `interpolation=cv2.INTER_LANCZOS4` (×2 | ×0.5)
 
 ## Structure
 
@@ -87,7 +92,7 @@ Run jupyter lab in a browser.
 jupyter lab
 ```
 
-Add dependencies in `environment.yml`, and run the following command to install them:
+If you wish to install other dependencies, please add them manually in `environment.yml`, and run the following command to install them:
 
 ```bash
 conda env update
@@ -109,7 +114,7 @@ If you see a Jupyter Notebook and a Python Script which share the same name, **a
 
 ---
 
-🎃 **Final Year Project** ©Spencer Woo. Released under the [MIT License](./LICENSE).
+🎃 **The Robustness of Adversarial Examples** ©Spencer Woo. Released under the [MIT License](./LICENSE).
 
 Authored and maintained by Spencer Woo.
 
