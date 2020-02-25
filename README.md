@@ -1,4 +1,4 @@
-<h1>🎃 The Robustness of Adversarial Examples</h1>
+<h1>The Robustness of Adversarial Examples</h1>
 
 ![](https://img.shields.io/badge/using-PyTorch-ee4c2c?logo=PyTorch&logoColor=white&style=flat-square)
 ![](https://img.shields.io/badge/python-3.7.6-4381b2?logo=python&logoColor=white&style=flat-square)
@@ -65,12 +65,11 @@ You can download ImageNette training and validation images here: [160 px downloa
 
 ## Structure
 
-|              Directory               | Purpose                                                                                                                                                                                                                                  |
-| :----------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|           [./misc](./misc)           | All are sample scripts where I follow examples from official PyTorch / Keras tutorials and try to recreate the same results.                                                                                                             |
-| [./resnet_foolbox](./resnet_foolbox) | 1. Creating a ResNet18 ConvNet by transfer training the default ResNet18 model against the ImageNette dataset.<br>2. Attacking the trained ConvNet with Foolbox, measuring the effectiveness of said attack after image transformations. |
-|    [./vgg_foolbox](./vgg_foolbox)    | 1. Creating a VGG11 ConvNet by transfer training the default VGG11 model against the ImageNette dataset.<br>2. Attacking the trained ConvNet with Foolbox, measuring the effectiveness of said attack after image transformations.       |
-|                 ...                  | ...                                                                                                                                                                                                                                      |
+| Directory                                                                     | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| :---------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [./misc](./misc)                                                              | All are sample scripts where I follow examples from official PyTorch / Keras tutorials and try to recreate the same results.                                                                                                                                                                                                                                                                                                                                                               |
+| [./resnet_foolbox](./resnet_foolbox)<br>[./vgg_foolbox](./vgg_foolbox)<br>... | 1. Creating a state-of-the-art ConvNet by transfer training default ConvNet models that PyTorch provides against the ImageNette dataset: `xxx_imagenette_transfer.ipynb`<br>2.Attacking the ConvNet with FGSM only, visualize generated adversaries: `xxx_fgsm_attack_sample.ipynb`<br>3. Attacking the trained ConvNet with [FGSM, DeepFool, JSMA, CW, MI_FGSM] using Foolbox, measuring the effectiveness of said attack after image transformations: `xxx_adv_with_image_scaling.ipynb` |
+
 
 ## Building and running
 
