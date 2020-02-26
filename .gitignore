@@ -134,3 +134,6 @@ dmypy.json
 # training dataset folder
 data/
 *.pth
+
+# .virtual documents
+.virtual_documents/
