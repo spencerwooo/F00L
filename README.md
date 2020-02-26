@@ -1,6 +1,8 @@
 <img src="https://i.loli.net/2020/02/26/SAx6ejplMbQovNG.png" align="right" width="125px" height="auto" alt="f00l!">
 
-<h1>The Robustness of Adversarial Examples</h1>
+<img src="https://i.loli.net/2020/02/26/gi5bjUaqshn4du9.png" width="150px" height="auto" alt="F00L"/>
+
+<h6>The Robustness of Adversarial Examples</h6>
 
 ![](https://img.shields.io/badge/uses-PyTorch-5b8c85?logo=PyTorch&logoColor=white)
 ![](https://img.shields.io/badge/python-3.7.6-297ca0?logo=python&logoColor=white)
@@ -18,7 +20,7 @@
 - [Structure](#structure)
 - [Building and running](#building-and-running)
 
-<h6>This is my final year project. I am investigating the impact of image scaling on the effectiveness of adversarial attacks targeted on ConvNets (or other neural networks).</h6>
+> This is my final year project. I am investigating the impact of image scaling on the effectiveness of adversarial attacks targeted on ConvNets (or other neural networks).
 
 ## Experiment overview
 
