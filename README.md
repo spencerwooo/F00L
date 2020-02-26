@@ -8,8 +8,6 @@
 ![](https://img.shields.io/badge/GPU-2080Ti-76B900?logo=NVIDIA&logoColor=white)
 ![](https://img.shields.io/badge/license-MIT-434e52?)
 
-<h6>This is my final year project. I am investigating the impact of image scaling on the effectiveness of adversarial attacks targeted on ConvNets (or other neural networks).</h6>
-
 ## Table of contents
 
 - [Table of contents](#table-of-contents)
@@ -20,6 +18,8 @@
   - [Image scaling](#image-scaling)
 - [Structure](#structure)
 - [Building and running](#building-and-running)
+
+<h6>This is my final year project. I am investigating the impact of image scaling on the effectiveness of adversarial attacks targeted on ConvNets (or other neural networks).</h6>
 
 ## Experiment overview
 
@@ -116,7 +116,7 @@ If you see a Jupyter Notebook and a Python Script which share the same name, **a
 
 ---
 
-🎃 **The Robustness of Adversarial Examples** ©Spencer Woo. Released under the [MIT License](./LICENSE).
+📦 **The Robustness of Adversarial Examples** ©Spencer Woo. Released under the [MIT License](./LICENSE).
 
 Authored and maintained by Spencer Woo.
 
