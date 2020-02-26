@@ -119,7 +119,9 @@ If you see a Jupyter Notebook and a Python Script which share the same name, **a
 
 ---
 
-📦 **The Robustness of Adversarial Examples** ©Spencer Woo. Released under the [MIT License](./LICENSE).
+📦 **F00L: Investigating the Robustness of Adversarial Examples** ©Spencer Woo.
+
+Released under the [MIT License](./LICENSE).
 
 Authored and maintained by Spencer Woo.
 
