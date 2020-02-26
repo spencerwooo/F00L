@@ -4,20 +4,24 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
+  - python=3
   - tensorflow
   - numpy
   - matplotlib
   - pylint
   - yapf
   - notebook
-  - jupyterlab
+  - jupyterlab=1.2
   - pytorch
   - torchvision
   - opencv
   - cudatoolkit=10.1
   - tqdm
   - pip
+  - nodejs
+  - jupyterlab_code_formatter
+  - python-language-server
   - pip:
-    - foolbox
-    - ipywidgets
+      - foolbox
+      - ipywidgets
+      - halo
