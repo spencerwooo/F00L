@@ -8,7 +8,7 @@
 ![](https://img.shields.io/badge/python-3.7.6-297ca0?logo=python&logoColor=white)
 ![](https://img.shields.io/badge/lab-Jupyter-ec9b3b?logo=Jupyter&logoColor=white)
 ![](https://img.shields.io/badge/GPU-2080Ti-76B900?logo=NVIDIA&logoColor=white)
-![](https://img.shields.io/badge/license-MIT-434e52?)
+![](https://img.shields.io/badge/license-MIT-434e52)
 
 <h2>Table of contents</h2>
 
