@@ -15,17 +15,21 @@ import torchvision.transforms as transforms
 from tqdm import tqdm
 
 
-def import_dataset(dataset_path):
+def import_dataset(dataset_path, image_size):
   """
   Retrieve training and testing dataset: ImageNette
 
   10 class_names: [tench, English springer, cassette player, chain saw,
     church, French horn, garbage truck, gas pump, golf ball, parachute]
 
-  size: 160px * 160px
+  Original image size: 160px * 160px
+
+  Transform image size:
+  1. 213 × 213: ResNet18, MobileNet v2, VGG11
+  2. 299 × 299: Inception v3
   """
   transform = transforms.Compose([
-      transforms.Resize((213, 213)),
+      transforms.Resize((image_size, image_size)),
       transforms.ToTensor(),
       transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
   ])
@@ -79,7 +83,7 @@ def load_pretrained_model(model_name, class_names):
     top_layer = model_conv.classifier[-1]
 
   elif model_name == 'inception_v3':
-    model_conv = models.inception_v3(pretrained=True)
+    model_conv = models.inception_v3(pretrained=True, aux_logits=False)
 
     # freeze all layers except the final layer (dense layer)
     for param in model_conv.parameters():
