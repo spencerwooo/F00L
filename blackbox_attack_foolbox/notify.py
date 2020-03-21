@@ -35,7 +35,6 @@ def bit_handler(action, bitjs, username, password):
     cmd = 'node {} {} {} {}'.format(bitjs, action, username, password)
   if action == 'logout':
     cmd = 'node {} {} {}'.format(bitjs, action, username)
-  print(cmd)
   stream = os.popen(cmd)
   output = stream.read()
   return output
