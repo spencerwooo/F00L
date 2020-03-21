@@ -18,6 +18,9 @@ CLASS_NAMES = [
     'golf ball', 'parachute'
 ]
 
+# testing: 1 x 1, normal: 10 x 10
+DATASET_IMAGE_NUM = 1
+
 # instantiate model
 model = torchvision.models.resnet18(pretrained=True)
 for param in model.parameters():
@@ -47,8 +50,8 @@ fmodel = foolbox.models.PyTorchModel(model, bounds=(0, 1), num_classes=10, prepr
 # resize image to size 213 * 213
 transform = transforms.Compose([transforms.Resize((213, 213)), transforms.ToTensor()])
 
-class_start_indice = [indice * 200 for indice in range(0, 10)]
-images_in_class_indice = np.array([[j for j in range(k, k + 10)] for k in class_start_indice]).flatten()
+class_start_indice = [indice * 200 for indice in range(0, DATASET_IMAGE_NUM)]
+images_in_class_indice = np.array([[j for j in range(k, k + DATASET_IMAGE_NUM)] for k in class_start_indice]).flatten()
 # training dataset path
 dataset_path = '../data/imagenette2-160/val'
 
@@ -146,9 +149,9 @@ pbar.write('Model predicted adversaries with an accuracy of: {:.2f}%'.format(adv
 
 # Send notifications
 bitjs = '~/.net/BIT.js'
-title = 'Attack complete'
+title = 'HopSkipJumpAttack complete'
 msg = 'Time elapsed {:.2f}m {:.2f}s'.format(time_elapsed // 60, time_elapsed % 60)
-cmd = 'python notify.py -b "{}" -t "{}" -m "{}"'.format(title, msg)
+cmd = 'python notify.py -b "{}" -t "{}" -m "{}"'.format(bitjs, title, msg)
 stream = os.popen(cmd)
 output = stream.read()
 print('\n' + output)
