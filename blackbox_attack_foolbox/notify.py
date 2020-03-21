@@ -3,11 +3,12 @@ Server Chan Notifications: Push notifications to WeChat upon training complete.
 
 ! NOTE: You won't need this file unless you know what you are doing.
 ! You can customize your own push notification by acquiring a token at: https://sc.ftqq.com
+! This script requires: https://github.com/LiJinyao/BIT-campus-network-CLI
 
 * Prerequisites: setting environment variables
   - `BIT_ACNT`: your login account
   - `BIT_SCRT`: your login password
-* CLI USAGE: python notify.py -t <title> -m <message>
+* CLI USAGE: python notify.py -b <BIT.js> -t <title> -m <message>
 """
 
 import os
@@ -29,47 +30,44 @@ def notify_server_chan(msg_title, msg_desp):
   print('[Server Chan]', f.read().decode('utf-8'))
 
 
-def bit_handler(action, username, password):
-  url = 'http://10.0.0.55:801/include/auth_action.php'
-
-  data = urllib.parse.urlencode({
-      'action': action,
-      'username': username,
-      'password': password,
-      'ac_id': 8,
-      'save_me': 1,
-      'ajax': 1
-  }).encode('utf-8')
-
-  post_req = urllib.request.Request(url, data=data)
-  post_resp = urllib.request.urlopen(post_req)
-  return post_resp.read().decode('utf-8')
+def bit_handler(action, bitjs, username, password):
+  if action == 'login':
+    stream = os.popen('node {} {} {}'.format(bitjs, action, username, password))
+  if action == 'logout':
+    stream = os.popen('node {} {} {}'.format(bitjs, action, username))
+  output = stream.read()
+  return output
 
 
 def parse_args(argv):
+  # default location
+  bitjs = 'BIT.js'
+  # default messages
   title = 'Congrats! Task complete.'
   msg = 'Task successfully complete. Login to check outputs.'
 
   try:
-    opts, args = getopt.getopt(argv, 'ht:m:', ['title=', 'msg='])
+    opts, args = getopt.getopt(argv, 'hb:t:m:', ['bit=', 'title=', 'msg='])
   except getopt.GetoptError:
-    print('[NOTIFY] USAGE: python notify.py -t <title> -m <message>')
+    print('[NOTIFY] USAGE: python notify.py -b <BIT.js> -t <title> -m <message>')
     sys.exit(2)
 
   for opt, arg in opts:
     if opt == '-h':
-      print('[NOTIFY] USAGE: python notify.py -t <title> -m <message>')
+      print('[NOTIFY] USAGE: python notify.py -b <BIT.js> -t <title> -m <message>')
       sys.exit()
+    if opt in ('-b', '--bitjs'):
+      bitjs = arg
     if opt in ('-t', '--title'):
       title = arg
     if opt in ('-m', '--msg', '--message'):
       msg = arg
 
-  return title, msg
+  return bitjs, title, msg
 
 
 def main(argv):
-  title, msg = parse_args(argv)
+  bitjs, title, msg = parse_args(argv)
   if (len(argv) == 0):
     print('[NOTIFY] Default message detected.\n[NOTIFY] Title: {}\n[NOTIFY] Message: {}'.format(title, msg))
   else:
@@ -84,19 +82,19 @@ def main(argv):
     # send notifications
     try:
       # lin
-      lin_resp = bit_handler('login', BIT_ACNT, BIT_SCRT)
-      print('[NOTIFY] Web login: ', lin_resp)
+      lin_resp = bit_handler('login', bitjs, BIT_ACNT, BIT_SCRT)
+      print('[NOTIFY] Web login:\n', lin_resp)
 
-      if ('login_ok' in lin_resp):
+      if ('login successfully' in lin_resp):
         # notify
         notify_server_chan(title, msg)
         print('[NOTIFY] Notification sent! Logging out...')
       else:
         print('[NOTIFY] Login failed! Aborting...')
-      
+
       # lout
-      lout_resp = bit_handler('logout', BIT_ACNT, BIT_SCRT)
-      print('[NOTIFY] Web logout: ', lout_resp)
+      lout_resp = bit_handler('logout', bitjs, BIT_ACNT, BIT_SCRT)
+      print('[NOTIFY] Web logout:\n', lout_resp)
 
     except Exception as e:
       print('[NOTIFY] Notify failed: ', e)
