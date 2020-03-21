@@ -32,9 +32,11 @@ def notify_server_chan(msg_title, msg_desp):
 
 def bit_handler(action, bitjs, username, password):
   if action == 'login':
-    stream = os.popen('node {} {} {}'.format(bitjs, action, username, password))
+    cmd = 'node {} {} {} {}'.format(bitjs, action, username, password)
   if action == 'logout':
-    stream = os.popen('node {} {} {}'.format(bitjs, action, username))
+    cmd = 'node {} {} {}'.format(bitjs, action, username)
+  print(cmd)
+  stream = os.popen(cmd)
   output = stream.read()
   return output
 
