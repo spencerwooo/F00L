@@ -36,10 +36,13 @@ def bit_handler(action, username, password):
       'action': action,
       'username': username,
       'password': password,
-      'ac_id': 8
+      'ac_id': 8,
+      'save_me': 1,
+      'ajax': 1
   }).encode('utf-8')
 
-  post_resp = urllib.request.urlopen(url=url, data=data)
+  post_req = urllib.request.Request(url, data=data)
+  post_resp = urllib.request.urlopen(post_req)
   return post_resp.read().decode('utf-8')
 
 
@@ -76,7 +79,7 @@ def main(argv):
   BIT_ACNT = os.environ.get('BIT_ACNT')
   BIT_SCRT = os.environ.get('BIT_SCRT')
   if (BIT_ACNT != None and BIT_SCRT != None):
-    print('[NOTIFY] Got login info. Sending notification...')
+    print('[NOTIFY] Got login info. Logging in...')
 
     # send notifications
     try:
@@ -88,7 +91,9 @@ def main(argv):
         # notify
         notify_server_chan(title, msg)
         print('[NOTIFY] Notification sent! Logging out...')
-
+      else:
+        print('[NOTIFY] Login failed! Aborting...')
+      
       # lout
       lout_resp = bit_handler('logout', BIT_ACNT, BIT_SCRT)
       print('[NOTIFY] Web logout: ', lout_resp)
