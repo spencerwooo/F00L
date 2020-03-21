@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 from tqdm import tqdm
 
 # pretrained model state_dict path
-MODEL_RESNET_PATH = '../resnet_foolbox/200226_0214_resnet18_imagenette.pth'
+MODEL_RESNET_PATH = '../resnet_foolbox/200224_0901_resnet_imagenette.pth'
 
 # 10 classes
 CLASS_NAMES = [
