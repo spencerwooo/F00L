@@ -49,8 +49,8 @@ def bit_handler(action, username, password):
 
 
 def parse_args(argv):
-  title = ''
-  msg = ''
+  title = 'Congrats! Task complete.'
+  msg = 'Task successfully complete. Login to check outputs.'
 
   try:
     opts, args = getopt.getopt(argv, 'ht:m:', ['title=', 'msg='])
@@ -72,7 +72,10 @@ def parse_args(argv):
 
 def main(argv):
   title, msg = parse_args(argv)
-  print('[NOTIFY] Parsing message...\n[NOTIFY] Title: {}\n[NOTIFY] Message: {}'.format(title, msg))
+  if (len(argv) == 0):
+    print('[NOTIFY] Default message detected.\n[NOTIFY] Title: {}\n[NOTIFY] Message: {}'.format(title, msg))
+  else:
+    print('[NOTIFY] Parsing message...\n[NOTIFY] Title: {}\n[NOTIFY] Message: {}'.format(title, msg))
 
   # get env var
   BIT_ACNT = os.environ.get('BIT_ACNT')
