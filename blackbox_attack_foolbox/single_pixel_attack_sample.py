@@ -47,8 +47,8 @@ fmodel = foolbox.models.PyTorchModel(model, bounds=(0, 1), num_classes=10, prepr
 # resize image to size 213 * 213
 transform = transforms.Compose([transforms.Resize((213, 213)), transforms.ToTensor()])
 
-class_start_indice = [indice * 200 for indice in range(0, 10)]
-images_in_class_indice = np.array([[j for j in range(k, k + 10)] for k in class_start_indice]).flatten()
+class_start_indice = [indice * 200 for indice in range(0, 1)]
+images_in_class_indice = np.array([[j for j in range(k, k + 1)] for k in class_start_indice]).flatten()
 # training dataset path
 dataset_path = '../data/imagenette2-160/val'
 
@@ -95,7 +95,7 @@ pbar.write('Validated with accuracy of: {:.2f}%'.format(acc))
 # Perform an adversarial attack with FGSM
 print('\n[TASK 2/3] Generate adversaries:')
 tic = time.time()
-attack = foolbox.attacks.HopSkipJumpAttack(model=fmodel,
+attack = foolbox.attacks.SinglePixelAttack(model=fmodel,
                                            distance=foolbox.distances.Linf,
                                            criterion=foolbox.criteria.Misclassification())
 
