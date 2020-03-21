@@ -30,11 +30,13 @@ CLASS_NAMES = [
 # size of each batch
 BATCH_SIZE = 4
 # testing: 1 x 1, normal: 10 x 10
-DATASET_IMAGE_NUM = 1
+DATASET_IMAGE_NUM = 10
 # training dataset path
 DATASET_PATH = '../data/imagenette2-160/val'
+# attack method
+ATTACK_METHOD = 'hop_skip_jump_attack'
 # adv save path
-ADV_SAVE_PATH = 'advs/hop_skip_jump_attack_adv.npy'
+ADV_SAVE_PATH = 'advs/{}_adv.npy'.format(ATTACK_METHOD)
 
 
 def init_models():
@@ -54,12 +56,12 @@ def init_models():
 
 def attack_switcher(att, fmodel):
   switcher = {
-      'HopSkipJumpAttack':
+      'hop_skip_jump_attack':
       foolbox.attacks.HopSkipJumpAttack(
           model=fmodel,
           distance=foolbox.distances.Linf,
           criterion=foolbox.criteria.Misclassification()),
-      'SinglePixelAttack':
+      'single_pixel_attack':
       foolbox.attacks.SinglePixelAttack(
           model=fmodel,
           distance=foolbox.distances.Linf,
@@ -100,7 +102,7 @@ def main():
   #* 2/3: Perform an adversarial attack with blackbox attack
   print('[TASK 2/3] Generate adversaries:')
   #TODO: attack methods accepts: HopSkipJumpAttack, SinglePixelAttack
-  attack = attack_switcher('HopSkipJumpAttack')
+  attack = attack_switcher(ATTACK_METHOD, fmodel)
 
   tic = time.time()
   pbar = tqdm(dataset_loader)
