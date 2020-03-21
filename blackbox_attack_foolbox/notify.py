@@ -32,17 +32,12 @@ def notify_server_chan(msg_title, msg_desp):
 def bit_handler(action, username, password):
   url = 'http://10.0.0.55:801/include/auth_action.php'
 
-  if action == 'login':
-    # login
-    data = urllib.parse.urlencode({
-        'action': action,
-        'username': username,
-        'password': password,
-        'ac_id': 8
-    }).encode('utf-8')
-  else:
-    # logout
-    data = urllib.parse.urlencode({'action': action, 'ac_id': 8}).encode('utf-8')
+  data = urllib.parse.urlencode({
+      'action': action,
+      'username': username,
+      'password': password,
+      'ac_id': 8
+  }).encode('utf-8')
 
   post_resp = urllib.request.urlopen(url=url, data=data)
   return post_resp.read().decode('utf-8')
@@ -87,7 +82,7 @@ def main(argv):
     try:
       # lin
       lin_resp = bit_handler('login', BIT_ACNT, BIT_SCRT)
-      print('[NOTIFY] ', lin_resp)
+      print('[NOTIFY] Web login: ', lin_resp)
 
       if ('login_ok' in lin_resp):
         # notify
@@ -95,8 +90,8 @@ def main(argv):
         print('[NOTIFY] Notification sent! Logging out...')
 
       # lout
-      lout_resp = bit_handler('logout')
-      print('[NOTIFY] ', lout_resp)
+      lout_resp = bit_handler('logout', BIT_ACNT, BIT_SCRT)
+      print('[NOTIFY] Web logout: ', lout_resp)
 
     except Exception as e:
       print('[NOTIFY] Notify failed: ', e)
