@@ -1,0 +1,24 @@
+Instantiated ResNet18 with ImageNette trained weights.
+Loaded data from: ../data/imagenette2-160/val with a total of 100 images.
+[TASK 1/3] Validate orginal prediction:
+Validated predictions with accuracy of: 98.00%
+[TASK 2/3] Generate adversaries:
+Adversaries generated in: 627.00m 5.00s
+[TASK 3/3] Validate adversaries:
+Validated adversaries with accuracy of: 26.00%
+
+[NOTIFY] Parsing message...
+[NOTIFY] Title: Attack complete
+[NOTIFY] Message: Time elapsed 627.00m 5.00s
+[NOTIFY] Got login info. Logging in...
+[NOTIFY] Web login:
+ login successfully
+[36maccount  : 1120****30[0m
+[36mip       : 10.*.*.*2[0m
+[36mbandwidth: 27.33K[0m
+[36mtime     : 2分26秒[0m
+[36mbalance  : ￥11.33[0m
+[Server Chan] {"errno":0,"errmsg":"success","dataset":"done"}
+[NOTIFY] Notification sent! Logging out...
+[NOTIFY] Web logout:
+ logout successfully
