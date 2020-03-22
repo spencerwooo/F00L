@@ -60,7 +60,7 @@ def main():
   advs = np.load(ADV_SAVE_PATH)
 
   #* TASK 1/3: validate original adversaries
-  print('[TASK 1/3] Validate original adversaries:')
+  print('\n[TASK 1/3] Validate original adversaries:')
   utils.validate(fmodel,
                  dataset_loader,
                  dataset_size,
@@ -68,7 +68,7 @@ def main():
                  advs=advs)
 
   #* TASK 2/3: resize adversaries
-  print('[TASK 2/3] Resize adversaries:')
+  print('\n[TASK 2/3] Resize adversaries:')
   scales = [0.5, 2]
   methods = [
       'INTER_NEAREST', 'INTER_LINEAR', 'INTER_AREA', 'INTER_CUBIC',
@@ -85,9 +85,10 @@ def main():
       resized_advs[method][scale] = utils.scale_adv(advs, scale, method)
 
   #* TASK 3/3: validate resized adversaries
-  print('[TASK 3/3] Validate resized adversaries:')
+  print('\n[TASK 3/3] Validate resized adversaries:')
   for method in methods:
     for scale in scales:
+      print('[Resize method: {:<14}, scale factor: {:>3}]'.format(method, scale))
       utils.validate(fmodel,
                      dataset_loader,
                      dataset_size,
