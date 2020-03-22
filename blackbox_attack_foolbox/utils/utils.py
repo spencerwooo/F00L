@@ -9,6 +9,8 @@ import torchvision
 import torchvision.transforms as transforms
 from tqdm import tqdm
 
+import cv2
+
 
 def load_trained_model(model_name=None, model_path='', class_num=10):
   # supported models: 'resnet', 'vgg', 'inception', 'mobilenet'
@@ -119,3 +121,33 @@ def notify(time_elapsed, notify='notify.py'):
   stream = os.popen(cmd)
   output = stream.read()
   print('\n' + output)
+
+
+def scale_adv(advs, resize_scale, interpolation_method):
+  """
+  Resize adversaries with 5 different methods
+  """
+  interpolation_methods = {
+      'INTER_NEAREST': cv2.INTER_NEAREST,
+      'INTER_LINEAR': cv2.INTER_LINEAR,
+      'INTER_AREA': cv2.INTER_AREA,
+      'INTER_CUBIC': cv2.INTER_CUBIC,
+      'INTER_LANCZOS4': cv2.INTER_LANCZOS4
+  }
+  interpolation = interpolation_methods[interpolation_method]
+  resized_advs = []
+
+  # default adversaries are stored in 4 images each batch
+  for adv_batch in advs:
+    resized_adv_batch = []
+    for adv in adv_batch:
+      resized_adv = cv2.resize(np.moveaxis(adv, 0, 2), (0, 0),
+                               fx=resize_scale,
+                               fy=resize_scale,
+                               interpolation=interpolation)
+      resized_adv_batch.append(np.moveaxis(resized_adv, 2, 0))
+    resized_advs.append(np.array(resized_adv_batch))
+
+  print('Image scaling done! Resized advs using {} with a scale of {}.'.format(
+      interpolation_method, resize_scale))
+  return resized_advs

@@ -74,7 +74,7 @@ def main():
   # load models
   model = init_models()
 
-  # define preprocessing procedures (Foolbox)
+  # define preprocessing procedures (foolbox)
   preprocessing = dict(mean=[0.485, 0.456, 0.406],
                        std=[0.229, 0.224, 0.225],
                        axis=-3)
@@ -96,7 +96,7 @@ def main():
                                        preprocessing=preprocessing)
 
   #* 1/3: Validate model's base prediction accuracy (about 97%)
-  print('[TASK 1/3] Validate orginal prediction:')
+  print('[TASK 1/3] Validate original prediction:')
   utils.validate(fmodel, dataset_loader, dataset_size, batch_size=BATCH_SIZE)
 
   #* 2/3: Perform an adversarial attack with blackbox attack
