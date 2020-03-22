@@ -13,11 +13,6 @@ Validated adversaries with accuracy of: 26.00%
 [NOTIFY] Got login info. Logging in...
 [NOTIFY] Web login:
  login successfully
-[36maccount  : 1120****30[0m
-[36mip       : 10.*.*.*2[0m
-[36mbandwidth: 27.33K[0m
-[36mtime     : 2分26秒[0m
-[36mbalance  : ￥11.33[0m
 [Server Chan] {"errno":0,"errmsg":"success","dataset":"done"}
 [NOTIFY] Notification sent! Logging out...
 [NOTIFY] Web logout:
