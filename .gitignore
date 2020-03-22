@@ -137,3 +137,6 @@ data/
 
 # .virtual documents
 .virtual_documents/
+
+# trained adversaries
+blackbox_attack_foolbox/advs/*.npy
