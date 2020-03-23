@@ -1,7 +1,8 @@
 """
 Perform HopSkipJumpAttack on CNNs
 
-* Generated adversaries are saved inside 'advs/hop_skip_jump_attack_adv.npy'
+* Generated adversaries are saved inside: 'advs/{ATTACK_METHOD}.npy'
+* e.g.: 'advs/hop_skip_jump_attack_adv.npy'
 """
 
 import os
@@ -17,9 +18,16 @@ from tqdm import tqdm
 
 from utils import utils
 
+# attack method: hop_skip_jump_attack / single_pixel_attack
+ATTACK_METHOD = 'single_pixel_attack'
+# model to attack: resnet / vgg / mobilenet / inception
+TARGET_MODEL = 'resnet'
+
 # pretrained model state_dict path
 MODEL_RESNET_PATH = '../resnet_foolbox/200224_0901_resnet_imagenette.pth'
 MODEL_VGG_PATH = '../vgg_foolbox/200224_0839_vgg_imagenette.pth'
+MODEL_MOBILENET_PATH = '../mobilenet_foolbox/200226_0150_mobilenet_v2_imagenette.pth'
+MODEL_INCEPTION_PATH = '../inception_foolbox/200228_1003_inception_v3_imagenette.pth'
 
 # 10 classes
 CLASS_NAMES = [
@@ -33,24 +41,23 @@ BATCH_SIZE = 4
 DATASET_IMAGE_NUM = 10
 # training dataset path
 DATASET_PATH = '../data/imagenette2-160/val'
-# attack method
-ATTACK_METHOD = 'hop_skip_jump_attack'
 # adv save path
 ADV_SAVE_PATH = 'advs/{}_adv.npy'.format(ATTACK_METHOD)
 
 
-def init_models():
+def init_models(model_name):
+  model_path = {
+      'resnet': MODEL_RESNET_PATH,
+      'vgg': MODEL_VGG_PATH,
+      'mobilenet': MODEL_MOBILENET_PATH,
+      'inception': MODEL_INCEPTION_PATH
+  }
+
   # instantiate resnet model
-  model = utils.load_trained_model(model_name='resnet',
-                                   model_path=MODEL_RESNET_PATH,
+  model = utils.load_trained_model(model_name=model_name,
+                                   model_path=model_path.get(model_name),
                                    class_num=len(CLASS_NAMES))
   print('Instantiated ResNet18 with ImageNette trained weights.')
-
-  # # instantiate vgg model
-  # model = utils.load_trained_model(model_name='vgg',
-  #                                      model_path=MODEL_VGG_PATH,
-  #                                      class_num=len(CLASS_NAMES))
-  # print('Instantiated VGG11, with ImageNette trained weights.')
   return model
 
 
@@ -72,7 +79,7 @@ def attack_switcher(att, fmodel):
 
 def main():
   # load models
-  model = init_models()
+  model = init_models(TARGET_MODEL)
 
   # define preprocessing procedures (foolbox)
   preprocessing = dict(mean=[0.485, 0.456, 0.406],
@@ -82,8 +89,6 @@ def main():
   # load dataset
   dataset_loader, dataset_size = utils.load_dataset(
       dataset_path=DATASET_PATH, dataset_image_len=DATASET_IMAGE_NUM)
-
-  # perform attack for loaded model
 
   # use GPU if available
   if torch.cuda.is_available():
@@ -101,7 +106,6 @@ def main():
 
   #* 2/3: Perform an adversarial attack with blackbox attack
   print('[TASK 2/3] Generate adversaries:')
-  #TODO: attack methods accepts: HopSkipJumpAttack, SinglePixelAttack
   attack = attack_switcher(ATTACK_METHOD, fmodel)
 
   tic = time.time()
@@ -111,8 +115,10 @@ def main():
   # iterate through images to generate adversaries
   adversaries = []
   for image, label in pbar:
-    #TODO: may need to change according to attack method
-    adv = attack(image.numpy(), label.numpy())
+    if ATTACK_METHOD == 'hop_skip_jump_attack':
+      adv = attack(image.numpy(), label.numpy())
+    elif ATTACK_METHOD == 'single_pixel_attack':
+      adv = attack(image.numpy(), label.numpy(), max_pixels=2000)
 
     # if an attack fails under preferred criterions, `np.nan` is returned,
     #  in which case, we'll return the original image
