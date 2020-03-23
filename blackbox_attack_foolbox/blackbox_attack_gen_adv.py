@@ -118,7 +118,7 @@ def main():
     if ATTACK_METHOD == 'hop_skip_jump_attack':
       adv = attack(image.numpy(), label.numpy())
     elif ATTACK_METHOD == 'single_pixel_attack':
-      adv = attack(image.numpy(), label.numpy(), max_pixels=2000)
+      adv = attack(image.numpy(), label.numpy(), max_pixels=1000)
 
     # if an attack fails under preferred criterions, `np.nan` is returned,
     #  in which case, we'll return the original image

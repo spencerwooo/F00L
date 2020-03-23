@@ -88,7 +88,8 @@ def main():
   print('\n[TASK 3/3] Validate resized adversaries:')
   for method in methods:
     for scale in scales:
-      print('[Resize method: {:<14}, scale factor: {:>3}]'.format(method, scale))
+      print('[Resize method: {:<14}, scale factor: {:>3}]'.format(
+          method, scale))
       utils.validate(fmodel,
                      dataset_loader,
                      dataset_size,

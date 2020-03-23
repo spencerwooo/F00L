@@ -1,0 +1,15 @@
+Instantiated ResNet18 with ImageNette trained weights.
+Loaded data from: ../data/imagenette2-160/val with a total of 100 images.
+[TASK 1/3] Validate original prediction:
+Validated predictions with accuracy of: 98.00%
+[TASK 2/3] Generate adversaries:
+Adversaries generated in: 12.00m 28.65s
+[TASK 3/3] Validate adversaries:
+Validated adversaries with accuracy of: 96.00%
+
+[NOTIFY] Parsing message...
+[NOTIFY] Title: Attack complete
+[NOTIFY] Message: Time elapsed 12.00m 28.65s
+[NOTIFY] Get login info failed. Trying direct notification...
+[NOTIFY] Notify failed:  <urlopen error [Errno 110] Connection timed out>
+
