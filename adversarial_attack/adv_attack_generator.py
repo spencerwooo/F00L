@@ -1,5 +1,5 @@
 """
-Perform HopSkipJumpAttack on CNNs
+Perform adversarial attacks on CNNs
 
 * Generated adversaries are saved inside: 'advs/{ATTACK_METHOD}.npy'
 * e.g.: 'advs/hop_skip_jump_attack_adv.npy'
@@ -7,8 +7,10 @@ Perform HopSkipJumpAttack on CNNs
 
 import os
 import time
+from datetime import datetime
 
 import foolbox
+from foolbox.distances import Linf
 import numpy as np
 import torch
 import torch.nn as nn
@@ -18,16 +20,23 @@ from tqdm import tqdm
 
 from utils import utils
 
-# attack method: hop_skip_jump_attack / single_pixel_attack
-ATTACK_METHOD = 'single_pixel_attack'
+# get current time
+now = datetime.now()
+
+#* attack method:
+# white box: fgsm / deep_fool / jsma / cw / mi_fgsm
+# black box: hop_skip_jump / single_pixel
+ATTACK_METHOD = 'fgsm'
 # model to attack: resnet / vgg / mobilenet / inception
 TARGET_MODEL = 'resnet'
+# perturbation threshold [4, 8, 16, 32]
+PERTURB_THRESHOLD = 4 / 213
 
 # pretrained model state_dict path
-MODEL_RESNET_PATH = '../resnet_foolbox/200224_0901_resnet_imagenette.pth'
-MODEL_VGG_PATH = '../vgg_foolbox/200224_0839_vgg_imagenette.pth'
-MODEL_MOBILENET_PATH = '../mobilenet_foolbox/200226_0150_mobilenet_v2_imagenette.pth'
-MODEL_INCEPTION_PATH = '../inception_foolbox/200228_1003_inception_v3_imagenette.pth'
+MODEL_RESNET_PATH = '../models/200224_0901_resnet_imagenette.pth'
+MODEL_VGG_PATH = '../models/200224_0839_vgg_imagenette.pth'
+MODEL_MOBILENET_PATH = '../models/200226_0150_mobilenet_v2_imagenette.pth'
+MODEL_INCEPTION_PATH = '../models/200228_1003_inception_v3_imagenette.pth'
 
 # 10 classes
 CLASS_NAMES = [
@@ -36,13 +45,14 @@ CLASS_NAMES = [
 ]
 
 # size of each batch
-BATCH_SIZE = 4
+BATCH_SIZE = 2
 # testing: 1 x 1, normal: 10 x 10
 DATASET_IMAGE_NUM = 10
 # training dataset path
 DATASET_PATH = '../data/imagenette2-160/val'
 # adv save path
-ADV_SAVE_PATH = 'advs/{}_adv.npy'.format(ATTACK_METHOD)
+ADV_SAVE_PATH = 'advs/{}_{}_adv.npy'.format(now.strftime('%y%m%d_%H%M'),
+                                            ATTACK_METHOD)
 
 
 def init_models(model_name):
@@ -57,22 +67,19 @@ def init_models(model_name):
   model = utils.load_trained_model(model_name=model_name,
                                    model_path=model_path.get(model_name),
                                    class_num=len(CLASS_NAMES))
-  print('Instantiated ResNet18 with ImageNette trained weights.')
+  print('Model {} initialized.'.format(model_name))
   return model
 
 
 def attack_switcher(att, fmodel):
   switcher = {
-      'hop_skip_jump_attack':
-      foolbox.attacks.HopSkipJumpAttack(
-          model=fmodel,
-          distance=foolbox.distances.Linf,
-          criterion=foolbox.criteria.Misclassification()),
-      'single_pixel_attack':
-      foolbox.attacks.SinglePixelAttack(
-          model=fmodel,
-          distance=foolbox.distances.Linf,
-          criterion=foolbox.criteria.Misclassification())
+      'fgsm': foolbox.attacks.GradientSignAttack(fmodel, distance=Linf),
+      'deep_fool': foolbox.attacks.DeepFoolAttack(fmodel, distance=Linf),
+      'jsma': foolbox.attacks.SaliencyMapAttack(fmodel, distance=Linf),
+      'cw': foolbox.attacks.CarliniWagnerL2Attack(fmodel, distance=Linf),
+      'mi-fgsm': foolbox.attacks.MomentumIterativeAttack(fmodel, distance=Linf),
+      'hop_skip_jump': foolbox.attacks.HopSkipJumpAttack(fmodel, distance=Linf),
+      'single_pixel': foolbox.attacks.SinglePixelAttack(fmodel, distance=Linf)
   }
   return switcher.get(att)
 
@@ -114,26 +121,42 @@ def main():
 
   # iterate through images to generate adversaries
   adversaries = []
+  distances = []
   for image, label in pbar:
-    if ATTACK_METHOD == 'hop_skip_jump_attack':
-      adv = attack(image.numpy(), label.numpy())
-    elif ATTACK_METHOD == 'single_pixel_attack':
-      adv = attack(image.numpy(), label.numpy(), max_pixels=1000)
+    adv = attack(image.numpy(), label.numpy(), unpack=False)
 
-    # if an attack fails under preferred criterions, `np.nan` is returned,
-    #  in which case, we'll return the original image
+    adv_batch = []
     for i, (single_adv, single_img) in enumerate(zip(adv, image.numpy())):
-      if np.isnan(single_adv).any():
-        adv[i] = single_img
-    adversaries.append(adv)
+      #TODO: perturbation distance under L∞
+      a = single_adv.perturbed
+      dist = single_adv.distance.value
+
+      #! limit generated adversary perturbation size
+      if (dist > PERTURB_THRESHOLD or a is None):
+        a = single_img
+        # print('Perturbation too large: {:.2f}'.format(dist))
+      else:
+        distances.append(dist)
+
+      adv_batch.append(a)
+
+    # return adversary batch array
+    adversaries.append(adv_batch)
+  # construct np array from generated adversaries
+  adversaries = np.array(adversaries)
+
+  # evaluate mean distance
+  distances = np.asarray(distances)
 
   toc = time.time()
   time_elapsed = toc - tic
   pbar.write('Adversaries generated in: {:.2f}m {:.2f}s'.format(
       time_elapsed // 60, time_elapsed % 60))
+  pbar.write('Distance: min {:.5f}, mean {:.5f}, max {:.5f}'.format(
+      distances.min(), np.median(distances), distances.max()))
 
   # save generated adversaries
-  np.save(ADV_SAVE_PATH, adversaries)
+  # np.save(ADV_SAVE_PATH, adversaries)
 
   #* 3/3: Validate model's adversary predictions
   print('[TASK 3/3] Validate adversaries:')
@@ -144,7 +167,7 @@ def main():
                  advs=adversaries)
 
   # notify
-  utils.notify(time_elapsed)
+  # utils.notify(time_elapsed)
 
 
 if __name__ == "__main__":
