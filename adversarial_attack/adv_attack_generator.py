@@ -142,16 +142,18 @@ def main():
 
     # return adversary batch array
     adversaries.append(adv_batch)
+
   # construct np array from generated adversaries
   adversaries = np.array(adversaries)
 
-  # evaluate mean distance
-  distances = np.asarray(distances)
-
+  # total attack time
   toc = time.time()
   time_elapsed = toc - tic
   pbar.write('Adversaries generated in: {:.2f}m {:.2f}s'.format(
       time_elapsed // 60, time_elapsed % 60))
+
+  # evaluate mean distance
+  distances = np.asarray(distances)
   pbar.write('Distance: min {:.5f}, mean {:.5f}, max {:.5f}'.format(
       distances.min(), np.median(distances), distances.max()))
 
