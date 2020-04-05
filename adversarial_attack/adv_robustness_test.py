@@ -12,7 +12,7 @@ from utils import utils
 ADV_SAVE_PATH = 'advs/hop_skip_jump_attack_adv.npy'
 # pretrained model state_dict path
 MODEL_NAME = 'resnet'
-MODEL_PATH = '../models/resnet_foolbox/200224_0901_resnet_imagenette.pth'
+MODEL_PATH = '../models/200224_0901_resnet_imagenette.pth'
 # 10 classes
 CLASS_NAMES = [
     'tench', 'English springer', 'cassette player', 'chain saw', 'church',

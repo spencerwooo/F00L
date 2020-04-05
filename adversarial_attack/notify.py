@@ -11,9 +11,9 @@ Server Chan Notifications: Push notifications to WeChat upon training complete.
 * CLI USAGE: python notify.py -b <BIT.js> -t <title> -m <message>
 """
 
+import getopt
 import os
 import sys
-import getopt
 import urllib.parse
 import urllib.request
 

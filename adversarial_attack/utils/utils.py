@@ -1,6 +1,7 @@
 import os
 import time
 
+import cv2
 import foolbox
 import numpy as np
 import torch
@@ -8,8 +9,6 @@ import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
 from tqdm import tqdm
-
-import cv2
 
 
 def load_trained_model(model_name=None, model_path='', class_num=10):
