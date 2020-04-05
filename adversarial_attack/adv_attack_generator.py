@@ -1,8 +1,11 @@
 """
 Perform adversarial attacks on CNNs
 
-* Generated adversaries are saved inside: 'advs/{ATTACK_METHOD}.npy'
-* e.g.: 'advs/hop_skip_jump_attack_adv.npy'
+* Generated adversaries are saved inside:
+
+  'advs/{TARGET_MODEL}/{ATTACK_METHOD}/{FILE_NAME}.npy'
+
+* e.g.: 'advs/resnet/fgsm/0405_1021_0.02_adv.npy'
 """
 
 import os
@@ -10,12 +13,12 @@ import time
 from datetime import datetime
 
 import foolbox
-from foolbox.distances import Linf
 import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
+from foolbox.distances import Linf
 from tqdm import tqdm
 
 from utils import utils
@@ -30,7 +33,8 @@ ATTACK_METHOD = 'fgsm'
 # model to attack: resnet / vgg / mobilenet / inception
 TARGET_MODEL = 'resnet'
 # perturbation threshold [4, 8, 16, 32]
-PERTURB_THRESHOLD = 4 / 213
+# TODO: threshold evaluation, Linfinity?
+PERTURB_THRESHOLD = 32 / 255
 
 # pretrained model state_dict path
 MODEL_RESNET_PATH = '../models/200224_0901_resnet_imagenette.pth'
@@ -45,14 +49,15 @@ CLASS_NAMES = [
 ]
 
 # size of each batch
-BATCH_SIZE = 2
+BATCH_SIZE = 4
 # testing: 1 x 1, normal: 10 x 10
 DATASET_IMAGE_NUM = 10
 # training dataset path
 DATASET_PATH = '../data/imagenette2-160/val'
-# adv save path
-ADV_SAVE_PATH = 'advs/{}_{}_adv.npy'.format(now.strftime('%y%m%d_%H%M'),
-                                            ATTACK_METHOD)
+# adv save path, name
+ADV_SAVE_PATH = os.path.join('advs', TARGET_MODEL, ATTACK_METHOD)
+ADV_SAVE_NAME = '{}_{:.2f}_adv.npy'.format(now.strftime('%m%d_%H%M'),
+                                           PERTURB_THRESHOLD)
 
 
 def init_models(model_name):
@@ -67,7 +72,7 @@ def init_models(model_name):
   model = utils.load_trained_model(model_name=model_name,
                                    model_path=model_path.get(model_name),
                                    class_num=len(CLASS_NAMES))
-  print('Model {} initialized.'.format(model_name))
+  print('Model "{}" initialized.'.format(model_name))
   return model
 
 
@@ -77,7 +82,7 @@ def attack_switcher(att, fmodel):
       'deep_fool': foolbox.attacks.DeepFoolAttack(fmodel, distance=Linf),
       'jsma': foolbox.attacks.SaliencyMapAttack(fmodel, distance=Linf),
       'cw': foolbox.attacks.CarliniWagnerL2Attack(fmodel, distance=Linf),
-      'mi-fgsm': foolbox.attacks.MomentumIterativeAttack(fmodel, distance=Linf),
+      'mi_fgsm': foolbox.attacks.MomentumIterativeAttack(fmodel, distance=Linf),
       'hop_skip_jump': foolbox.attacks.HopSkipJumpAttack(fmodel, distance=Linf),
       'single_pixel': foolbox.attacks.SinglePixelAttack(fmodel, distance=Linf)
   }
@@ -112,7 +117,9 @@ def main():
   utils.validate(fmodel, dataset_loader, dataset_size, batch_size=BATCH_SIZE)
 
   #* 2/3: Perform an adversarial attack with blackbox attack
-  print('[TASK 2/3] Generate adversaries:')
+  print(
+      '[TASK 2/3] Generate adversaries with "{}" on threshold "{:.4f}":'.format(
+          ATTACK_METHOD, PERTURB_THRESHOLD))
   attack = attack_switcher(ATTACK_METHOD, fmodel)
 
   tic = time.time()
@@ -158,7 +165,9 @@ def main():
       distances.min(), np.median(distances), distances.max()))
 
   # save generated adversaries
-  # np.save(ADV_SAVE_PATH, adversaries)
+  if not os.path.exists(ADV_SAVE_PATH):
+    os.makedirs(ADV_SAVE_PATH)
+  np.save(os.path.join(ADV_SAVE_PATH, ADV_SAVE_NAME), adversaries)
 
   #* 3/3: Validate model's adversary predictions
   print('[TASK 3/3] Validate adversaries:')

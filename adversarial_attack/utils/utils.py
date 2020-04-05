@@ -19,8 +19,8 @@ def load_trained_model(model_name=None, model_path='', class_num=10):
   # load models
   if model_name == 'resnet':
     model = torchvision.models.resnet18(pretrained=True)
-    for param in model.parameters():
-      param.requires_grad = False
+    # for param in model.parameters():
+    #   param.requires_grad = False
     num_features = model.fc.in_features
     model.fc = nn.Linear(num_features, class_num)
 
@@ -30,12 +30,14 @@ def load_trained_model(model_name=None, model_path='', class_num=10):
     model.classifier[-1] = nn.Linear(num_features, class_num)
 
   elif model_name == 'inception':
-    # TODO: implement inception v3 model loading
-    pass
+    model = torchvision.models.inception_v3(pretrained=True, aux_logits=False)
+    num_features = model.fc.in_features
+    model.fc = nn.Linear(num_features, class_num)
 
   elif model_name == 'mobilenet':
-    # TODO: implement mobilenet v2 model loading
-    pass
+    model = torchvision.models.mobilenet_v2(pretrained=True)
+    num_features = model.classifier[-1].in_features
+    model.classifier[-1] = nn.Linear(num_features, len(CLASS_NAMES))
 
   else:
     raise NotImplementedError('Model not supported')

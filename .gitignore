@@ -139,4 +139,4 @@ data/
 .virtual_documents/
 
 # trained adversaries
-adversarial_attack/advs/*.npy
+adversarial_attack/advs/**/*.npy
