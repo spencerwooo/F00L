@@ -140,3 +140,4 @@ data/
 
 # trained adversaries
 adversarial_attack/advs/**/*.npy
+*.npy

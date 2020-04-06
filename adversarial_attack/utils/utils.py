@@ -36,7 +36,7 @@ def load_trained_model(model_name=None, model_path='', class_num=10):
   elif model_name == 'mobilenet':
     model = torchvision.models.mobilenet_v2(pretrained=True)
     num_features = model.classifier[-1].in_features
-    model.classifier[-1] = nn.Linear(num_features, len(CLASS_NAMES))
+    model.classifier[-1] = nn.Linear(num_features, class_num)
 
   else:
     raise NotImplementedError('Model not supported')
