@@ -25,6 +25,7 @@ dependencies:
   - python-language-server
   - pip:
       # foolbox 3.0.0 have some breaking changes
-      - foolbox=2.4.0
+      # - foolbox==3.0.0b1
+      - foolbox==2.4.0
       - ipywidgets
       - halo
