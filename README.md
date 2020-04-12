@@ -47,16 +47,17 @@ You can download ImageNette training and validation images here: [160 px downloa
 
 **White-box attack:**
 
-- FGSM (GradientSignAttack)
-- DeepFool (DeepFoolAttack)
-- JSMA (SaliencyMapAttack)
-- CW (CarliniWagnerL2Attack)
-- MI-FGSM (MomentumIterativeAttack)
+- FGSM (`GradientSignAttack`)
+- BIM (`LinfinityBasicIterativeAttack`)
+- MIM (`MomentumIterativeAttack`)
+- DeepFool (`DeepFoolLinfinityAttack`)
+- CW (`CarliniWagnerL2Attack`)
+- *JSMA (`SaliencyMapAttack`) maybe?*
 
 **Black-box attack:**
 
-- Single Pixel Attack
-- HopSkipJumpAttack (Boundary Attack++)
+- *Single Pixel Attack (`SinglePixelAttack`) maybe?*
+- *HopSkipJumpAttack - Boundary Attack++ (`HopSkipJumpAttack`) maybe?*
 
 ### Image scaling
 
@@ -69,12 +70,12 @@ You can download ImageNette training and validation images here: [160 px downloa
 
 ## Structure
 
-| Directory                                                                                                                                                                 | Purpose                                                                                                                                                                                                                                                                                                        |
-| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [./misc](./misc)                                                                                                                                                          | All are sample scripts where I follow examples from official PyTorch / Keras tutorials and try to recreate the same results.                                                                                                                                                                                   |
-| [./utils](./utils)                                                                                                                                                        | Utility module for `convnet_trainer.ipynb` to use when training different models with different architectures.                                                                                                                                                                                                 |
-| [convnet_trainer.ipynb](convnet_trainer.ipynb)                                                                                                                            | Creating a state-of-the-art ConvNet by transfer training default ConvNet models that PyTorch provides against the ImageNette dataset                                                                                                                                                                           |
-| [./resnet_foolbox](./resnet_foolbox)<br>[./vgg_foolbox](./vgg_foolbox)<br>[./mobilenet_foolbox](./mobilenet_foolbox)<br>[./inception_foolbox](./inception_foolbox)<br>... | 1.Attacking the ConvNet with FGSM only, visualize generated adversaries: `xxx_fgsm_attack_sample.ipynb`<br>2. Attacking the trained ConvNet with [FGSM, DeepFool, JSMA, CW, MI_FGSM] using Foolbox, measuring the effectiveness of said attack after image transformations: `xxx_adv_with_image_scaling.ipynb` |
+| Directory                                        | Purpose                                                                                                                                                                                                            |
+| :----------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [./misc](./misc)                                 | All are sample scripts where I follow examples from official PyTorch / Keras tutorials and try to recreate the same results, or where I keep some of the deprecated code which I no longer use or is proven wrong. |
+| [`convnet_trainer.ipynb`](convnet_trainer.ipynb) | Creating a state-of-the-art ConvNet by transfer training default ConvNet models that PyTorch provides against the ImageNette dataset                                                                               |
+| [./utils](./utils)                               | Utility module for `convnet_trainer.ipynb` to use when training different models with different architectures.                                                                                                     |
+| [./adversarial_attack](./adversarial_attack)     | Try to implement Steps 2-3 as shown in the experiment overview                                                                                                                                                     |
 
 
 ## Building and running
@@ -111,9 +112,9 @@ Exit conda environment:
 conda deactivate
 ```
 
-**Most of the valuable and more useful code** is in folders named in the `*_foolbox` pattern.
+**Most of the valuable and more useful code** is inside the folder `adversarial_attack`.
 
-**Most pre-trained weights** have been uploaded to Google Drive for you to use right away. Dig into the Jupyter Notebooks for more info.
+**Most pre-trained weights** have been uploaded to Google Drive for you to use right away. Dig into the folders' README for more info.
 
 If you see a Jupyter Notebook and a Python Script which share the same name, **always use the notebook!**
 
