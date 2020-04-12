@@ -72,8 +72,8 @@ def load_dataset(dataset_path=None, dataset_image_len=1, batch_size=4):
   # get dataset size (length)
   dataset_size = len(dataset)
 
-  print('Loaded data from: {} with a total of {} images.'.format(
-      dataset_path, dataset_size))
+  # print('Loaded data from: {} with a total of {} images.'.format(
+  #     dataset_path, dataset_size))
 
   return dataset_loader, dataset_size
 
@@ -105,7 +105,7 @@ def validate(fmodel, dataset_loader, dataset_size, batch_size=4, advs=None):
     pbar.set_postfix(acc='{:.2f}%'.format(current_acc))
 
   acc = acc * 100 / dataset_size
-  pbar.write('Validated {} with accuracy of: {:.2f}%'.format(stage, acc))
+  # pbar.write('Validated {} with accuracy of: {:.2f}%'.format(stage, acc))
   return preds
 
 

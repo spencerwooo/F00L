@@ -33,10 +33,8 @@ now = datetime.now()
 ATTACK_METHOD = 'fgsm'
 # model to attack: resnet / vgg / mobilenet / inception
 TARGET_MODEL = 'resnet'
-
-# perturbation threshold [4, 8, 16, 32]
-# TODO: threshold evaluation, L2
-THRESHOLD = 16 / 255
+#TODO: perturbation threshold L∞ norm [4, 8, 16, 32]
+THRESHOLD = 32 / 255
 
 SAVE_ADVS = False
 SCATTER_PLOT_DIST = True
@@ -70,7 +68,7 @@ def init_models(model_name):
   model = utils.load_trained_model(model_name=model_name,
                                    model_path=model_path.get(model_name),
                                    class_num=len(CLASS_NAMES))
-  print('Model "{}" initialized.'.format(model_name))
+  # print('Model "{}" initialized.'.format(model_name))
   return model
 
 
@@ -87,7 +85,7 @@ def attack_switcher(att, fmodel):
   return switcher.get(att)
 
 
-def main():
+if __name__ == "__main__":
   model = init_models(TARGET_MODEL)
   preprocessing = dict(mean=[0.485, 0.456, 0.406],
                        std=[0.229, 0.224, 0.225],
@@ -106,12 +104,12 @@ def main():
                                        preprocessing=preprocessing)
 
   #* 1/3: Validate model's base prediction accuracy (about 97%)
-  print('[TASK 1/3] Validate imgs:')
+  # print('[TASK 1/3] Validate imgs:')
   utils.validate(fmodel, dataset_loader, dataset_size, batch_size=BATCH_SIZE)
 
   #* 2/3: Perform an adversarial attack with blackbox attack
-  print('[TASK 2/3] Generate advs with "{}", threshold "{:.3f}":'.format(
-      ATTACK_METHOD, THRESHOLD))
+  # print('[TASK 2/3] Generate advs with "{}", threshold "{:.3f}":'.format(
+  #     ATTACK_METHOD, THRESHOLD))
   attack = attack_switcher(ATTACK_METHOD, fmodel)
 
   tic = time.time()
@@ -180,6 +178,7 @@ def main():
     indice = np.arange(0, len(distances), 1)
     plt.scatter(indice, distances)
     plt.ylabel('L∞ distance')
+    # plt.ylim(0, THRESHOLD * 2)
     plt.xlabel('Adversaries')
     plt.grid(axis='y')
     plt.show()
@@ -191,7 +190,7 @@ def main():
     np.save(os.path.join(ADV_SAVE_PATH, ADV_SAVE_NAME), adversaries)
 
   #* 3/3: Validate model's adversary predictions
-  print('[TASK 3/3] Validate advs:')
+  # print('[TASK 3/3] Validate advs:')
   utils.validate(fmodel,
                  dataset_loader,
                  dataset_size,
@@ -200,7 +199,3 @@ def main():
 
   # notify
   # utils.notify(time_elapsed)
-
-
-if __name__ == "__main__":
-  main()
