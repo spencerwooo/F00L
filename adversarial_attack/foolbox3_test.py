@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Adversarial attacks with Foolbox 3.0.
 
@@ -10,6 +11,8 @@ Todo:
   * Black box attacks like Boundary Attack have not been tested.
 
 """
+
+import time
 
 import foolbox.attacks as fa
 import matplotlib.pyplot as plt
@@ -35,6 +38,7 @@ def model_validate(fmodel, device, dataset_loader, dataset_size, adv=None):
   """ Benchmark model accuracy with either original images or advs. """
 
   pbar = tqdm(dataset_loader)
+  pbar.set_description('Img' if adv is None else 'Adv')
   acc = 0.0
 
   for i, (image, label) in enumerate(pbar):
@@ -43,8 +47,11 @@ def model_validate(fmodel, device, dataset_loader, dataset_size, adv=None):
     predictions = fmodel(image if adv is None else adv[i]).argmax(axis=-1)
     acc += (predictions == label).sum().item()
 
-  print('{}: {}%'.format('Imgs' if adv is None else 'Advs',
+  print('{}: {}%'.format('Img' if adv is None else 'Adv',
                          acc * 100 / dataset_size))
+  # give the output to stdout a sec to show (same as below)
+  time.sleep(0.5)
+
 
 
 def plot_distances(dist, lp_norm='inf'):
@@ -55,6 +62,8 @@ def plot_distances(dist, lp_norm='inf'):
   plt.ylabel('L{} distance'.format(lp_norm))
   plt.xlabel('Adversaries')
   plt.grid(axis='y')
+  plt.title('L_{}: min {:.3f}, mean {:.3f}, max {:.3f}'.format(
+      lp_norm, dist.min(), np.median(dist), dist.max()))
   plt.show()
 
 
@@ -83,10 +92,11 @@ def main():
 
   #* 2/3: Perform adversarial attack.
   attack = fa.LinfBasicIterativeAttack()
-  # attack = fa.L2CarliniWagnerAttack()
+  # attack = fa.LinfDeepFoolAttack()
   eps = [4 / 255]
 
   pbar = tqdm(dataset_loader)
+  pbar.set_description('Att')
   dist = []
   adversaries = []
 
@@ -109,6 +119,7 @@ def main():
 
   print('L_{}: min {:.3f}, mean {:.3f}, max {:.3f}'.format(
       lp_norm, dist.min(), np.median(dist), dist.max()))
+  time.sleep(0.5)
 
   #* 3/3: Validate generated adversarial examples.
   model_validate(fmodel, device, dataset_loader, dataset_size, adv=adversaries)
