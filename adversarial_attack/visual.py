@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""Visualize results from saved *.npy files.
+
+Files:
+  * Images (and adversarial examples):
+    `*.npy`: visualize with the first two cells.
+  * L2/L∞ norms:
+    `*.npy`: scatter plot with the last few cells.
+
+"""
+
 # %%
 import numpy as np
 import matplotlib.pyplot as plt
