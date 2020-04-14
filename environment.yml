@@ -9,7 +9,6 @@ dependencies:
   - numpy
   - matplotlib
   - pylint
-  - yapf
   - notebook
   - jupyterlab=1.2
   - pytorch
@@ -27,5 +26,6 @@ dependencies:
       # foolbox 3.0.0 have some breaking changes
       - foolbox==3.0.0b1
       # - foolbox==2.4.0
+      - cblack
       - ipywidgets
       - halo

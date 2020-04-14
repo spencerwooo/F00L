@@ -25,20 +25,28 @@ from tqdm import tqdm
 from utils import utils
 
 CLASS_NAMES = [
-    'tench', 'English springer', 'cassette player', 'chain saw', 'church',
-    'French horn', 'garbage truck', 'gas pump', 'golf ball', 'parachute'
+  "tench",
+  "English springer",
+  "cassette player",
+  "chain saw",
+  "church",
+  "French horn",
+  "garbage truck",
+  "gas pump",
+  "golf ball",
+  "parachute",
 ]
 BATCH_SIZE = 4
 DATASET_IMAGE_NUM = 10
-DATASET_PATH = '../data/imagenette2-160/val'
-MODEL_RESNET_PATH = '../models/200224_0901_resnet_imagenette.pth'
+DATASET_PATH = "../data/imagenette2-160/val"
+MODEL_RESNET_PATH = "../models/200224_0901_resnet_imagenette.pth"
 
 
 def model_validate(fmodel, device, dataset_loader, dataset_size, adv=None):
   """ Benchmark model accuracy with either original images or advs. """
 
   pbar = tqdm(dataset_loader)
-  pbar.set_description('Img' if adv is None else 'Adv')
+  pbar.set_description("Img" if adv is None else "Adv")
   acc = 0.0
 
   for i, (image, label) in enumerate(pbar):
@@ -47,39 +55,42 @@ def model_validate(fmodel, device, dataset_loader, dataset_size, adv=None):
     predictions = fmodel(image if adv is None else adv[i]).argmax(axis=-1)
     acc += (predictions == label).sum().item()
 
-  print('{}: {}%'.format('Img' if adv is None else 'Adv',
-                         acc * 100 / dataset_size))
+  print("{}: {}%".format("Img" if adv is None else "Adv", acc * 100 / dataset_size))
   # give the output to stdout a sec to show (same as below)
   time.sleep(0.5)
 
 
-
-def plot_distances(dist, lp_norm='inf'):
+def plot_distances(dist, lp_norm="inf"):
   """ Plot each of the distances of the adversaries """
 
   indice = np.arange(0, len(dist), 1)
+
   plt.scatter(indice, dist)
-  plt.ylabel('L{} distance'.format(lp_norm))
-  plt.xlabel('Adversaries')
-  plt.grid(axis='y')
-  plt.title('L_{}: min {:.3f}, mean {:.3f}, max {:.3f}'.format(
-      lp_norm, dist.min(), np.median(dist), dist.max()))
+  plt.ylabel("L{} distance".format(lp_norm))
+  plt.xlabel("Adversaries")
+
+  plt.grid(axis="y")
+  plt.title(
+    "L_{}: min {:.3f}, mean {:.3f}, max {:.3f}".format(
+      lp_norm, dist.min(), np.median(dist), dist.max()
+    )
+  )
+
   plt.show()
 
 
 def main():
   """ Validate -> Attack -> Revalidate """
 
-  model = utils.load_trained_model(model_name='resnet',
-                                   model_path=MODEL_RESNET_PATH,
-                                   class_num=len(CLASS_NAMES))
+  model = utils.load_trained_model(
+    model_name="resnet", model_path=MODEL_RESNET_PATH, class_num=len(CLASS_NAMES)
+  )
 
-  preprocessing = dict(mean=[0.485, 0.456, 0.406],
-                       std=[0.229, 0.224, 0.225],
-                       axis=-3)
+  preprocessing = dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3)
 
   dataset_loader, dataset_size = utils.load_dataset(
-      dataset_path=DATASET_PATH, dataset_image_len=DATASET_IMAGE_NUM)
+    dataset_path=DATASET_PATH, dataset_image_len=DATASET_IMAGE_NUM
+  )
 
   # use GPU if available
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -87,24 +98,21 @@ def main():
 
   fmodel = PyTorchModel(model, bounds=(0, 1), preprocessing=preprocessing)
 
-  #* 1/3: Validate original images.
+  # * 1/3: Validate original images.
   model_validate(fmodel, device, dataset_loader, dataset_size)
 
-  #* 2/3: Perform adversarial attack.
+  # * 2/3: Perform adversarial attack.
   attack = fa.LinfBasicIterativeAttack()
   # attack = fa.LinfDeepFoolAttack()
   eps = [4 / 255]
 
   pbar = tqdm(dataset_loader)
-  pbar.set_description('Att')
+  pbar.set_description("Att")
   dist = []
   adversaries = []
 
   for image, label in pbar:
-    advs, _, _ = attack(fmodel,
-                        image.to(device),
-                        label.to(device),
-                        epsilons=eps)
+    advs, _, _ = attack(fmodel, image.to(device), label.to(device), epsilons=eps)
     adversaries.append(advs[0])
 
     for single_adv, single_img in zip(advs[0], image.to(device)):
@@ -113,15 +121,18 @@ def main():
       # _l2 = norm(perturb.flatten(), 2)
       dist.append(_linf)
 
-  lp_norm = 'inf'
+  lp_norm = "inf"
   dist = np.asarray(dist)
   plot_distances(dist, lp_norm=lp_norm)
 
-  print('L_{}: min {:.3f}, mean {:.3f}, max {:.3f}'.format(
-      lp_norm, dist.min(), np.median(dist), dist.max()))
+  print(
+    "L_{}: min {:.3f}, mean {:.3f}, max {:.3f}".format(
+      lp_norm, dist.min(), np.median(dist), dist.max()
+    )
+  )
   time.sleep(0.5)
 
-  #* 3/3: Validate generated adversarial examples.
+  # * 3/3: Validate generated adversarial examples.
   model_validate(fmodel, device, dataset_loader, dataset_size, adv=adversaries)
 
 
