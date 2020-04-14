@@ -8,6 +8,7 @@ newest version of Foolbox: 3.0. (Still testing if viable.)
 Todo:
   * L2DeepFoolAttack and L2CarliniWagnerAttack have not been
     successfully constrained. Still working on them.
+  * Need to add condition to ignore fixed epsilon attacks.
   * Black box attacks like Boundary Attack have not been tested.
 
 """
@@ -36,9 +37,14 @@ CLASS_NAMES = [
   "golf ball",
   "parachute",
 ]
+
+NORM = "2"
+THRESHOLD = 5
+
 BATCH_SIZE = 4
 DATASET_IMAGE_NUM = 10
 DATASET_PATH = "../data/imagenette2-160/val"
+
 MODEL_RESNET_PATH = "../models/200224_0901_resnet_imagenette.pth"
 
 
@@ -66,12 +72,14 @@ def plot_distances(dist, lp_norm="inf"):
   indice = np.arange(0, len(dist), 1)
 
   plt.scatter(indice, dist)
-  plt.ylabel("L{} distance".format(lp_norm))
+  plt.ylabel("L_{} distance".format(lp_norm))
   plt.xlabel("Adversaries")
+  plt.ylim(0, THRESHOLD * 2)
+  plt.hlines(y=THRESHOLD, xmin=-10, xmax=len(dist) + 10, colors="r")
 
   plt.grid(axis="y")
   plt.title(
-    "L_{}: min {:.3f}, mean {:.3f}, max {:.3f}".format(
+    "L_{}: min {:.4f}, mean {:.4f}, max {:.4f}".format(
       lp_norm, dist.min(), np.median(dist), dist.max()
     )
   )
@@ -102,9 +110,11 @@ def main():
   model_validate(fmodel, device, dataset_loader, dataset_size)
 
   # * 2/3: Perform adversarial attack.
-  attack = fa.LinfBasicIterativeAttack()
+  # attack = fa.LinfFastGradientAttack()
+  # attack = fa.LinfBasicIterativeAttack()
+  attack = fa.L2CarliniWagnerAttack()
   # attack = fa.LinfDeepFoolAttack()
-  eps = [4 / 255]
+  eps = [THRESHOLD]
 
   pbar = tqdm(dataset_loader)
   pbar.set_description("Att")
@@ -113,21 +123,29 @@ def main():
 
   for image, label in pbar:
     advs, _, _ = attack(fmodel, image.to(device), label.to(device), epsilons=eps)
+
+    for i, (single_adv, single_img) in enumerate(zip(advs[0], image.to(device))):
+      perturb = (single_adv - single_img).cpu()
+      _l_p = norm(perturb.flatten(), np.inf if NORM == "inf" else 2)
+
+      # Todo: add condition to ignore fixed epsilon attacks
+      if _l_p > THRESHOLD:
+        # replace adversaries with perturbations larger than threshold with original
+        # images (for attacks with minimization approaches: cw, deepfool)
+        # _l_p = 0.0
+        advs[0][i] = single_img
+
+      dist.append(_l_p)
+
     adversaries.append(advs[0])
 
-    for single_adv, single_img in zip(advs[0], image.to(device)):
-      perturb = (single_adv - single_img).cpu()
-      _linf = norm(perturb.flatten(), np.inf)
-      # _l2 = norm(perturb.flatten(), 2)
-      dist.append(_linf)
-
-  lp_norm = "inf"
   dist = np.asarray(dist)
-  plot_distances(dist, lp_norm=lp_norm)
+  plot_distances(dist, lp_norm=NORM)
+  np.save("cw_dist.npy", dist)
 
   print(
-    "L_{}: min {:.3f}, mean {:.3f}, max {:.3f}".format(
-      lp_norm, dist.min(), np.median(dist), dist.max()
+    "L_{}: min {:.4f}, mean {:.4f}, max {:.4f}".format(
+      NORM, dist.min(), np.median(dist), dist.max()
     )
   )
   time.sleep(0.5)
