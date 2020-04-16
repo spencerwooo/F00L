@@ -17,24 +17,20 @@ import foolbox.attacks as fa
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torch.nn as nn
-import torchvision
-import torchvision.transforms as transforms
 from foolbox.distances import Linf
 from numpy.linalg import norm
 from tqdm import tqdm
 
 from utils import utils
 
-now = datetime.now()
+NOW = datetime.now()
 
-# * attack method:
-# fgsm / bim / mim / deep_fool / cw | hop_skip_jump / single_pixel
-ATTACK_METHOD = "fgsm"
-# model to attack: resnet / vgg / mobilenet / inception
+# Methods: fgsm / bim / mim / df / cw | hop_skip_jump / single_pixel
+ATTACK_METHOD = "cw"
+# Models: resnet / vgg / mobilenet / inception
 TARGET_MODEL = "resnet"
 # TODO: perturbation threshold L∞ norm [4, 8, 16, 32]
-THRESHOLD = 32 / 255
+THRESHOLD = 5  # 4 / 255
 
 SAVE_ADVS = False
 SCATTER_PLOT_DIST = True
@@ -62,10 +58,12 @@ BATCH_SIZE = 4
 DATASET_IMAGE_NUM = 10
 DATASET_PATH = "../data/imagenette2-160/val"
 ADV_SAVE_PATH = os.path.join("advs", TARGET_MODEL, ATTACK_METHOD)
-ADV_SAVE_NAME = "{}_{:.3f}_adv.npy".format(now.strftime("%m%d_%H%M"), THRESHOLD)
+ADV_SAVE_NAME = "{}_{:.3f}_adv.npy".format(NOW.strftime("%m%d_%H%M"), THRESHOLD)
 
 
 def init_models(model_name):
+  """ Initialize pretrained CNN models """
+
   model_path = {
     "resnet": MODEL_RESNET_PATH,
     "vgg": MODEL_VGG_PATH,
@@ -78,26 +76,75 @@ def init_models(model_name):
     model_path=model_path.get(model_name),
     class_num=len(CLASS_NAMES),
   )
-  # print('Model "{}" initialized.'.format(model_name))
   return model
 
 
 def attack_switcher(att, fmodel):
+  """ Initialize different attacks. """
+
   switcher = {
     "fgsm": fa.GradientSignAttack(fmodel, distance=Linf),
     "bim": fa.LinfinityBasicIterativeAttack(fmodel, distance=Linf),
     "mim": fa.MomentumIterativeAttack(fmodel, distance=Linf),
-    "deep_fool": fa.DeepFoolLinfinityAttack(fmodel, distance=Linf),
-    "cw": fa.CarliniWagnerL2Attack(fmodel, distance=Linf),
+    "df": fa.DeepFoolLinfinityAttack(fmodel, distance=Linf),
+    "cw": fa.CarliniWagnerL2Attack(fmodel),
     "hop_skip_jump": fa.HopSkipJumpAttack(fmodel),
     "single_pixel": fa.SinglePixelAttack(fmodel),
   }
   return switcher.get(att)
 
 
-if __name__ == "__main__":
+def attack_params(att, image, label):
+  """ att """
+
+  params = {
+    "fgsm": {
+      "inputs": image.numpy(),
+      "labels": label.numpy(),
+      "epsilons": [THRESHOLD],
+    },
+    "mim": {
+      "inputs": image.numpy(),
+      "labels": label.numpy(),
+      "binary_search": False,
+      "epsilon": THRESHOLD,
+    },
+    "bim": {
+      "inputs": image.numpy(),
+      "labels": label.numpy(),
+      "binary_search": False,
+      "epsilon": THRESHOLD,
+    },
+    "df": {"inputs": image.numpy(), "labels": label.numpy()},
+    "cw": {"inputs": image.numpy(), "labels": label.numpy()},
+  }
+  return params.get(att)
+
+
+def plot_distances(distances):
+  """ Plot distances between adversaries and originals. """
+
+  indice = np.arange(0, len(distances), 1)
+  plt.scatter(indice, distances)
+  plt.hlines(y=THRESHOLD, xmin=0, xmax=len(distances), colors="r")
+
+  plt.ylabel("Distance")
+  plt.ylim(0, THRESHOLD * 2)
+
+  plt.xlabel("Adversaries")
+
+  plt.title("Attack: {} - Threshold: {:.5f}".format(ATTACK_METHOD, THRESHOLD))
+  plt.grid(axis="y")
+  plt.show()
+
+
+def main():
+  """ Validate -> Attack -> Revalidate """
+
   model = init_models(TARGET_MODEL)
-  preprocessing = dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3)
+  preprocessing = dict(
+    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3
+  )
 
   dataset_loader, dataset_size = utils.load_dataset(
     dataset_path=DATASET_PATH, dataset_image_len=DATASET_IMAGE_NUM
@@ -108,60 +155,46 @@ if __name__ == "__main__":
     model = model.cuda()
 
   fmodel = foolbox.models.PyTorchModel(
-    model, bounds=(0, 1), num_classes=len(CLASS_NAMES), preprocessing=preprocessing
+    model,
+    bounds=(0, 1),
+    num_classes=len(CLASS_NAMES),
+    preprocessing=preprocessing,
   )
 
   # * 1/3: Validate model's base prediction accuracy (about 97%)
-  # print('[TASK 1/3] Validate imgs:')
   utils.validate(fmodel, dataset_loader, dataset_size, batch_size=BATCH_SIZE)
 
   # * 2/3: Perform an adversarial attack with blackbox attack
-  # print('[TASK 2/3] Generate advs with "{}", threshold "{:.3f}":'.format(
-  #     ATTACK_METHOD, THRESHOLD))
   attack = attack_switcher(ATTACK_METHOD, fmodel)
 
   tic = time.time()
   pbar = tqdm(dataset_loader)
-  pbar.set_description("Generate adversaries")
+  pbar.set_description("ATT")
 
   adversaries = []
   distances = []
 
   for image, label in pbar:
-    if ATTACK_METHOD == "fgsm":
-      adv = attack(image.numpy(), label.numpy(), unpack=False, epsilons=[THRESHOLD])
-
-    elif ATTACK_METHOD in ["mim", "bim"]:
-      adv = attack(
-        image.numpy(),
-        label.numpy(),
-        unpack=False,
-        binary_search=False,
-        epsilon=THRESHOLD,
-      )
-
-    elif ATTACK_METHOD in ["deep_fool", "cw"]:
-      adv = attack(image.numpy(), label.numpy(), unpack=False)
-
-    else:
-      raise NotImplementedError
+    adv = attack(**attack_params(ATTACK_METHOD, image, label))
 
     adv_batch = []
-    for i, (single_adv, single_img) in enumerate(zip(adv, image.numpy())):
-      # TODO: perturbation distance under L2 norm
-      a = single_adv.perturbed
-      dist = single_adv.distance.value
-      single_adv = a
+    for single_adv, single_img in zip(adv, image.numpy()):
 
       if single_adv is None:
-        #! if an attack failed, replace adv with original image
+        # if an attack failed, replace adv with original image
         single_adv = single_img
       else:
-        #! limit generated adversary perturbation size
         perturb = single_adv - single_img
-        # _l2 = norm(perturb.flatten(), 2)
-        _linf = norm(perturb.flatten(), np.inf)
-        distances.append(_linf)
+        _lp = norm(perturb.flatten(), 2 if ATTACK_METHOD in ["cw"] else np.inf)
+
+        if _lp > THRESHOLD and ATTACK_METHOD in ["df", "cw"]:
+          # for attacks with minimization approaches (deep fool, cw)
+          # if distance larger than threshold, we consider attack failed
+          _lp = 0.0
+          single_adv = single_img
+
+        if not np.isnan(_lp):
+          distances.append(_lp)
 
       adv_batch.append(single_adv)
     adversaries.append(adv_batch)
@@ -186,15 +219,9 @@ if __name__ == "__main__":
     )
   )
 
-  #! whether or not to plot the distances
+  # whether or not to plot the distances
   if SCATTER_PLOT_DIST:
-    indice = np.arange(0, len(distances), 1)
-    plt.scatter(indice, distances)
-    plt.ylabel("L∞ distance")
-    # plt.ylim(0, THRESHOLD * 2)
-    plt.xlabel("Adversaries")
-    plt.grid(axis="y")
-    plt.show()
+    plot_distances(distances)
 
   # save generated adversaries
   if SAVE_ADVS:
@@ -203,10 +230,17 @@ if __name__ == "__main__":
     np.save(os.path.join(ADV_SAVE_PATH, ADV_SAVE_NAME), adversaries)
 
   # * 3/3: Validate model's adversary predictions
-  # print('[TASK 3/3] Validate advs:')
   utils.validate(
-    fmodel, dataset_loader, dataset_size, batch_size=BATCH_SIZE, advs=adversaries
+    fmodel,
+    dataset_loader,
+    dataset_size,
+    batch_size=BATCH_SIZE,
+    advs=adversaries,
   )
 
   # notify
   # utils.notify(time_elapsed)
+
+
+if __name__ == "__main__":
+  main()

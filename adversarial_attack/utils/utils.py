@@ -1,8 +1,19 @@
+"""General utility library for adversarial attack and image scaling.
+
+Functions:
+
+  * load_trained_model(): Load pretrained PyTorch models
+  * load_dataset(): Load 100 images from ImageNette validation set
+  * validate(): Run validations against original images or adversaries
+  * notify(): Notify with ServerChan when training completes
+  * scale_adv(): Scales adversaries with OpenCV
+"""
+
 import os
-import time
+
+# import time
 
 import cv2
-import foolbox
 import numpy as np
 import torch
 import torch.nn as nn
@@ -12,7 +23,15 @@ from tqdm import tqdm
 
 
 def load_trained_model(model_name=None, model_path="", class_num=10):
-  # supported models: 'resnet', 'vgg', 'inception', 'mobilenet'
+  """ Load trained model from .pth file.
+
+  Supported models:
+    * "resnet": resnet18
+    * "vgg": vgg11
+    * "inception": inception v3
+    * "mobilenet": mobilenet v2
+  """
+
   model = None
 
   # load models
@@ -47,8 +66,12 @@ def load_trained_model(model_name=None, model_path="", class_num=10):
 
 
 def load_dataset(dataset_path=None, dataset_image_len=1, batch_size=4):
+  """ Load ImageNette dataset with 10 images each from 10 different classes. """
+
   # resize image to size 213 * 213
-  transform = transforms.Compose([transforms.Resize((213, 213)), transforms.ToTensor()])
+  transform = transforms.Compose(
+    [transforms.Resize((213, 213)), transforms.ToTensor()]
+  )
 
   class_start_indice = [indice * 200 for indice in range(0, dataset_image_len)]
   images_in_class_indice = np.array(
@@ -56,7 +79,9 @@ def load_dataset(dataset_path=None, dataset_image_len=1, batch_size=4):
   ).flatten()
 
   # load dataset with validation images
-  dataset = torchvision.datasets.ImageFolder(root=dataset_path, transform=transform)
+  dataset = torchvision.datasets.ImageFolder(
+    root=dataset_path, transform=transform
+  )
 
   # 1. get 10 images from 10 classes for a total of 100 images, or ...
   dataset = torch.utils.data.Subset(dataset, images_in_class_indice)
@@ -69,19 +94,23 @@ def load_dataset(dataset_path=None, dataset_image_len=1, batch_size=4):
   # get dataset size (length)
   dataset_size = len(dataset)
 
-  # print('Loaded data from: {} with a total of {} images.'.format(
-  #     dataset_path, dataset_size))
+  # print(
+  #   "Loaded data from: {} with a total of {} images.".format(
+  #     dataset_path, dataset_size
+  #   )
+  # )
 
   return dataset_loader, dataset_size
 
 
 def validate(fmodel, dataset_loader, dataset_size, batch_size=4, advs=None):
-  pbar = tqdm(dataset_loader)
+  """ Validate either adversaries or original images with specified CNN model. """
 
   # if adv is default (None), validate predictions
-  stage = "predictions" if advs is None else "adversaries"
+  stage = "ORG" if advs is None else "ADV"
 
-  pbar.set_description("Validate {}".format(stage))
+  pbar = tqdm(dataset_loader)
+  pbar.set_description(stage)
   pbar.set_postfix(acc="0.0%")
 
   preds = []
@@ -102,28 +131,26 @@ def validate(fmodel, dataset_loader, dataset_size, batch_size=4, advs=None):
     pbar.set_postfix(acc="{:.2f}%".format(current_acc))
 
   acc = acc * 100 / dataset_size
-  # pbar.write('Validated {} with accuracy of: {:.2f}%'.format(stage, acc))
   return preds
 
 
-def notify(time_elapsed, notify="notify.py"):
-  """
-  Send notifications
-  """
+def notify(time_elapsed, notify_py="notify.py"):
+  """ Send notifications after training is finished. """
 
   bitjs = "~/.net/BIT.js"
   title = "Attack complete"
-  msg = "Time elapsed {:.2f}m {:.2f}s".format(time_elapsed // 60, time_elapsed % 60)
-  cmd = 'python {} -b "{}" -t "{}" -m "{}"'.format(notify, bitjs, title, msg)
+  msg = "Time elapsed {:.2f}m {:.2f}s".format(
+    time_elapsed // 60, time_elapsed % 60
+  )
+  cmd = 'python {} -b "{}" -t "{}" -m "{}"'.format(notify_py, bitjs, title, msg)
   stream = os.popen(cmd)
   output = stream.read()
   print("\n" + output)
 
 
 def scale_adv(advs, resize_scale, interpolation_method):
-  """
-  Resize adversaries with 5 different methods
-  """
+  """ Resize adversaries with 5 different methods using OpenCV. """
+
   interpolation_methods = {
     "INTER_NEAREST": cv2.INTER_NEAREST,
     "INTER_LINEAR": cv2.INTER_LINEAR,

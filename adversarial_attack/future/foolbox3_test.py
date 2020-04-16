@@ -15,6 +15,7 @@ Todo:
 
 import time
 
+import foolbox.distances as fd
 import foolbox.attacks as fa
 import matplotlib.pyplot as plt
 import numpy as np
@@ -38,8 +39,8 @@ CLASS_NAMES = [
   "parachute",
 ]
 
-NORM = "2"
-THRESHOLD = 5
+NORM = "inf"  # "inf" or "2"
+THRESHOLD = 5 # "inf": 4; "2": 5
 
 BATCH_SIZE = 4
 DATASET_IMAGE_NUM = 10
@@ -111,9 +112,9 @@ def main():
 
   # * 2/3: Perform adversarial attack.
   # attack = fa.LinfFastGradientAttack()
-  # attack = fa.LinfBasicIterativeAttack()
-  attack = fa.L2CarliniWagnerAttack()
-  # attack = fa.LinfDeepFoolAttack()
+  attack = fa.LinfBasicIterativeAttack()
+  # attack = fa.L2CarliniWagnerAttack()
+  # attack = fa.L2DeepFoolAttack()
   eps = [THRESHOLD]
 
   pbar = tqdm(dataset_loader)
@@ -127,6 +128,7 @@ def main():
     for i, (single_adv, single_img) in enumerate(zip(advs[0], image.to(device))):
       perturb = (single_adv - single_img).cpu()
       _l_p = norm(perturb.flatten(), np.inf if NORM == "inf" else 2)
+      _dist = fd.linf(single_img, single_adv)
 
       # Todo: add condition to ignore fixed epsilon attacks
       if _l_p > THRESHOLD:
@@ -141,7 +143,7 @@ def main():
 
   dist = np.asarray(dist)
   plot_distances(dist, lp_norm=NORM)
-  np.save("cw_dist.npy", dist)
+  # np.save("cw_dist_lim_1.npy", dist)
 
   print(
     "L_{}: min {:.4f}, mean {:.4f}, max {:.4f}".format(
