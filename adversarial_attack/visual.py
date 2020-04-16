@@ -38,32 +38,36 @@ plt.subplot(1, 3, 3)
 plt.imshow(img_to_np(adv - img).squeeze())
 
 # %%
-THRESHOLD = 4
+THRESHOLD = 8 / 255
+NORM = "inf"
 
 indice = np.arange(0, 100, 1)
 # dist_fgsm = np.load("dist_fgsm.npy")
 # dist_deep_fool = np.load("dist_deep_fool.npy")
-dist_cw = np.load("cw_dist_lim_1.npy")
+dist_hsj = np.load("dist_hsj.npy")
+dist_ga = np.load("dist_ga.npy")
 
+dist = dist_hsj
+
+# %%
 fig = plt.figure()
 ax = fig.add_axes([0, 0, 1, 1])
 # ax.scatter(indice, dist_fgsm, label="fgsm, l2")
 # ax.scatter(indice, dist_deep_fool, label="deep fool, l2")
 
-ax.scatter(indice, dist_cw, label="cw, l2")
+ax.scatter(indice, dist, label="HopSkipJumpAttack, l{}".format(NORM))
 
-# ax.set_ylim(0, 8)
-ax.set_ylabel("L2 norm distance")
-ax.set_xlabel("Image index")
+ax.set_ylabel("l{} norm distance".format(NORM))
+ax.set_xlabel("adversaries")
 ax.legend()
 
-plt.hlines(y=THRESHOLD, xmin=0, xmax=100, colors="r")
+plt.hlines(y=THRESHOLD, xmin=0, xmax=4, colors="r")
 plt.ylim(0, THRESHOLD * 1.2)
-plt.title("ResNet adversaries perturbation size (l2 norm)")
+plt.title("ResNet adversaries perturbation size (l{} norm)".format(NORM))
 plt.show()
 
 print(
   "L_{}: min {:.4f}, mean {:.4f}, max {:.4f}".format(
-    "2", dist_cw.min(), np.median(dist_cw), dist_cw.max()
+    NORM, dist.min(), np.median(dist), dist.max()
   )
 )
