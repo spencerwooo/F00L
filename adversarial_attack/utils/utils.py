@@ -73,7 +73,7 @@ def load_dataset(dataset_path=None, dataset_image_len=1, batch_size=4):
     [transforms.Resize((213, 213)), transforms.ToTensor()]
   )
 
-  class_start_indice = [indice * 200 for indice in range(0, dataset_image_len)]
+  class_start_indice = [indice * 360 for indice in range(0, dataset_image_len)]
   images_in_class_indice = np.array(
     [[j for j in range(k, k + dataset_image_len)] for k in class_start_indice]
   ).flatten()
