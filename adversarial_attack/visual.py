@@ -41,15 +41,17 @@ plt.imshow(img_to_np(adv - img).squeeze())
 THRESHOLD = 8 / 255
 NORM = "inf"
 
-indice = np.arange(0, 100, 1)
 # dist_fgsm = np.load("dist_fgsm.npy")
 # dist_deep_fool = np.load("dist_deep_fool.npy")
 dist_hsj = np.load("dist_hsj.npy")
-dist_ga = np.load("dist_ga.npy")
+# dist_ga = np.load("dist_ga.npy")
 
 dist = dist_hsj
 
 # %%
+length = 100
+indice = np.arange(0, length, 1)
+
 fig = plt.figure()
 ax = fig.add_axes([0, 0, 1, 1])
 # ax.scatter(indice, dist_fgsm, label="fgsm, l2")
@@ -61,8 +63,8 @@ ax.set_ylabel("l{} norm distance".format(NORM))
 ax.set_xlabel("adversaries")
 ax.legend()
 
-plt.hlines(y=THRESHOLD, xmin=0, xmax=4, colors="r")
-plt.ylim(0, THRESHOLD * 1.2)
+plt.hlines(y=THRESHOLD, xmin=0, xmax=length, colors="r")
+plt.ylim(0, THRESHOLD * 2)
 plt.title("ResNet adversaries perturbation size (l{} norm)".format(NORM))
 plt.show()
 
