@@ -16,6 +16,7 @@
   - [Training and evaluation dataset](#training-and-evaluation-dataset)
   - [Target models](#target-models)
   - [Attack methods (non-targeted)](#attack-methods-non-targeted)
+  - [Perturbation budget](#perturbation-budget)
   - [Image scaling](#image-scaling)
 - [Structure](#structure)
 - [Building and running](#building-and-running)
@@ -52,12 +53,24 @@ You can download ImageNette training and validation images here: [160 px downloa
 - MIM (`MomentumIterativeAttack`)
 - DeepFool (`DeepFoolLinfinityAttack`)
 - CW (`CarliniWagnerL2Attack`)
-- *JSMA (`SaliencyMapAttack`) maybe?*
 
 **Black-box attack:**
 
-- *Single Pixel Attack (`SinglePixelAttack`) maybe?*
-- *HopSkipJumpAttack - Boundary Attack++ (`HopSkipJumpAttack`) maybe?*
+- HopSkipJumpAttack - Boundary Attack++ (`HopSkipJumpAttack`)
+- GenAttack (`GenAttack`) *Needs to be initialized with a target, in our case: `9`.*
+
+### Perturbation budget
+
+**White-box attack:**
+
+- FGSM, BIM, MIM: L∞ = 8/255
+- DeepFool: L∞ < 8/255
+- CW: L2 < 5
+
+**Black-box attack:**
+
+- HopSkipJumpAttack: L∞ < 8/255
+- GenAttack: L∞ = 0.5
 
 ### Image scaling
 
