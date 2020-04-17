@@ -11,8 +11,6 @@ Functions:
 
 import os
 
-# import time
-
 import cv2
 import numpy as np
 import torch
@@ -103,19 +101,24 @@ def load_dataset(dataset_path=None, dataset_image_len=1, batch_size=4):
   return dataset_loader, dataset_size
 
 
-def validate(fmodel, dataset_loader, dataset_size, batch_size=4, advs=None):
+def validate(
+  fmodel, dataset_loader, dataset_size, batch_size=4, advs=None, silent=False
+):
   """ Validate either adversaries or original images with specified CNN model. """
 
   # if adv is default (None), validate predictions
   stage = "ORG" if advs is None else "ADV"
 
-  pbar = tqdm(dataset_loader)
-  pbar.set_description(stage)
-  pbar.set_postfix(acc="0.0%")
+  dl_iter = dataset_loader
+  if not silent:
+    pbar = tqdm(dataset_loader)
+    pbar.set_description(stage)
+    pbar.set_postfix(acc="0.0%")
+    dl_iter = pbar
 
   preds = []
   acc = 0.0
-  for i, (image, label) in enumerate(pbar):
+  for i, (image, label) in enumerate(dl_iter):
     # make a prediction on either original dataset or adversaries
     if advs is None:
       prob = fmodel.forward(image.numpy())
@@ -128,10 +131,11 @@ def validate(fmodel, dataset_loader, dataset_size, batch_size=4, advs=None):
     # calculate current accuracy
     acc += np.sum(pred == label.numpy())
     current_acc = acc * 100 / ((i + 1) * batch_size)
-    pbar.set_postfix(acc="{:.2f}%".format(current_acc))
+    if not silent:
+      dl_iter.set_postfix(acc="{:.2f}%".format(current_acc))
 
   acc = acc * 100 / dataset_size
-  return preds
+  return acc
 
 
 def notify(time_elapsed, notify_py="notify.py"):
@@ -175,9 +179,9 @@ def scale_adv(advs, resize_scale, interpolation_method):
       resized_adv_batch.append(np.moveaxis(resized_adv, 2, 0))
     resized_advs.append(np.array(resized_adv_batch))
 
-  print(
-    "Image scaling done! Resized advs using {} with a scale of {}.".format(
-      interpolation_method, resize_scale
-    )
-  )
+  # print(
+  #   "Image scaling done! Resized advs using {} with a scale of {}.".format(
+  #     interpolation_method, resize_scale
+  #   )
+  # )
   return resized_advs

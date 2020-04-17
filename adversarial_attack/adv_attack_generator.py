@@ -27,14 +27,14 @@ from utils import utils
 NOW = datetime.now()
 
 # Methods: fgsm / bim / mim / df / cw | hsj / ga
-ATTACK_METHOD = "bim"
+ATTACK_METHOD = "fgsm"
 # Models: resnet / vgg / mobilenet / inception
 TARGET_MODEL = "resnet"
-# Perturbation threshold: L∞ - 8/255, L2 - 5
+# Perturbation threshold: L∞ - 8/255, L2 - 5 (GenAttack: L∞ - 0.5)
 THRESHOLD = 8 / 255
 
 SAVE_DIST = False
-SAVE_ADVS = False
+SAVE_ADVS = True
 SCATTER_PLOT_DIST = True
 
 MODEL_RESNET_PATH = "../models/200224_0901_resnet_imagenette.pth"
@@ -91,7 +91,6 @@ def attack_switcher(att, fmodel):
     "df": fa.DeepFoolLinfinityAttack(fmodel, distance=Linf),
     "cw": fa.CarliniWagnerL2Attack(fmodel),
     "hsj": fa.HopSkipJumpAttack(fmodel, distance=Linf),
-    # Todo: Fix Gen Attack target class failure
     "ga": fa.GenAttack(fmodel, criterion=TargetClass(9), distance=Linf),
   }
 
