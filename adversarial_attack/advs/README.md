@@ -1,6 +1,36 @@
 # Adversaries generated
 
-This directory stores the adversaries generated during the black box attack. Download pre-generated attack adversaries following the link below.
+This directory stores the adversaries generated during adversarial attacks. Download pre-generated attack adversaries following the link below.
+
+## Directory structure
+
+You should organize the `.npy` files under this directory according to the following structure:
+
+```
+.
+├── README.md
+├── resnet
+│   ├── bim
+│   │   └── 0417_0708_0.031_adv.npy
+│   ├── cw
+│   │   └── 0417_0710_5.000_adv.npy
+│   ├── df
+│   │   └── 0417_0708_0.031_adv.npy
+│   ├── fgsm
+│   │   └── 0417_0546_0.031_adv.npy
+│   ├── ga
+│   │   └── 0417_0936_0.500_adv.npy
+│   ├── hsj
+│   │   └── 0416_0906_0.031_adv.npy
+│   └── mim
+│        └── 0417_0708_0.031_adv.npy
+└── mobilenet
+│   └── ...
+└── vgg
+│   └── ...
+└── inception
+     └── ...
+```
 
 ## List of files
 
@@ -21,4 +51,10 @@ This directory stores the adversaries generated during the black box attack. Dow
 | File name                                 | Google Drive Link                                                                 |
 | :---------------------------------------- | :-------------------------------------------------------------------------------- |
 | `advs/resnet/hsj/0416_0906_0.031_adv.npy` | [HopSkipJump](https://drive.google.com/open?id=1JWQ6lHMg_yKo_AZX6noI1n12y8V4xQVw) |
-| `advs/resnet`                             | [GenAttack]()                                                                     |
+| `advs/resnet/ga/0417_0936_0.500_adv.npy`  | [GenAttack](https://drive.google.com/open?id=1n7UtpXx_LxLlNArI2XQs7eG1ffbqTVI6)   |
+
+### `mobilenet`
+
+### `vgg`
+
+### `inception`
