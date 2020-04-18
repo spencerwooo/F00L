@@ -152,6 +152,9 @@ def plot_results(original_data, flattened_data):
     plt.title("{}: {} adversary robustness".format(MODEL_NAME, ATTACK_MTD))
     plt.show()
 
+    # save plot to local
+    plt.savefig("plots/{}_{}.png".format(MODEL_NAME, ATTACK_MTD))
+
 
 # %%
 # Validate adv -> Rescale -> Validate scaled adv
