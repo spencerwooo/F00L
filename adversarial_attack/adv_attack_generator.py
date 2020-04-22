@@ -19,6 +19,7 @@ import numpy as np
 import torch
 from foolbox.criteria import TargetClass
 from foolbox.distances import Linf
+from matplotlib import rcParams
 from numpy.linalg import norm
 from tqdm import tqdm
 
@@ -27,15 +28,15 @@ from utils import utils
 NOW = datetime.now()
 
 # Methods: fgsm / bim / mim / df / cw | hsj / ga
-ATTACK_METHOD = "fgsm"
+ATTACK_METHOD = "hsj"
 # Models: resnet / vgg / mobilenet / inception
 TARGET_MODEL = "resnet"
 # Perturbation threshold: L∞ - 8/255, L2 - 5 (GenAttack: L∞ - 0.5)
-THRESHOLD = 8 / 255
+THRESHOLD = 0.5
 
 SAVE_DIST = False
 SAVE_ADVS = True
-SCATTER_PLOT_DIST = True
+SCATTER_PLOT_DIST = False
 
 MODEL_RESNET_PATH = "../models/200224_0901_resnet_imagenette.pth"
 MODEL_VGG_PATH = "../models/200226_0225_vgg11_imagenette.pth"
@@ -88,7 +89,7 @@ def attack_switcher(att, fmodel):
     "fgsm": fa.GradientSignAttack(fmodel, distance=Linf),
     "bim": fa.LinfinityBasicIterativeAttack(fmodel, distance=Linf),
     "mim": fa.MomentumIterativeAttack(fmodel, distance=Linf),
-    "df": fa.DeepFoolLinfinityAttack(fmodel, distance=Linf),
+    "df": fa.DeepFoolL2Attack(fmodel),
     "cw": fa.CarliniWagnerL2Attack(fmodel),
     "hsj": fa.HopSkipJumpAttack(fmodel, distance=Linf),
     "ga": fa.GenAttack(fmodel, criterion=TargetClass(9), distance=Linf),
@@ -119,6 +120,8 @@ def attack_params(att, image, label):
 
 def plot_distances(distances):
   """ Plot distances between adversaries and originals. """
+
+  rcParams["font.family"] = "monospace"
 
   indice = np.arange(0, len(distances), 1)
   plt.scatter(indice, distances)
@@ -182,8 +185,10 @@ def main():
 
       perturb = single_adv - single_img
 
-      # Only CW attacks are evaluated with L2 norm
-      _lp = norm(perturb.flatten(), 2 if ATTACK_METHOD in ["cw"] else np.inf)
+      # Only DeepFool and CW attacks are evaluated with L2 norm
+      _lp = norm(
+        perturb.flatten(), 2 if ATTACK_METHOD in ["cw", "df"] else np.inf
+      )
 
       # For attacks with minimization approaches (deep fool, cw),
       # if distance larger than threshold, we consider attack failed
