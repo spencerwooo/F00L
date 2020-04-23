@@ -32,7 +32,7 @@ from utils import utils
 # Attacks: fgsm, bim, mim, df, cw, hsj, ga
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "fgsm"
-BUDGET_LEVEL = 1
+BUDGET_LEVEL = 4
 
 SAVE_RESULTS = True
 PLOT_RESULTS = True
@@ -62,6 +62,8 @@ CLASS_NAMES = [
 BATCH_SIZE = 4
 DATASET_IMAGE_NUM = 10
 DATASET_PATH = "../data/imagenette2-160/val"
+PLOT_SAVE_PATH = os.path.join("robust_plots", TARGET_MODEL)
+PLOT_SAVE_NAME = "{}_level{}_robust".format(ATTACK_METHOD, BUDGET_LEVEL)
 
 
 def init_models():
@@ -88,7 +90,7 @@ def save_results_csv(data):
   if SAVE_RESULTS:
     fields = list(data.keys())
     fields.insert(0, "ATTACK_METHODS")
-    data["ATTACK_METHODS"] = ATTACK_METHOD
+    data["ATTACK_METHODS"] = "{}_level{}".format(ATTACK_METHOD, BUDGET_LEVEL)
 
     csv_file_path = "results/{}.csv".format(TARGET_MODEL)
     file_exists = os.path.isfile(csv_file_path)
@@ -150,11 +152,19 @@ def plot_results(original_data, flattened_data):
     plt.ylabel("attack success rate (%)")
     plt.ylim(0, np.max(data) * 1.2)
     plt.legend(custom_lgd, ["control group", "scale ×0.5", "scale ×2"])
-    plt.title("{}: {} adversary robustness".format(TARGET_MODEL, ATTACK_METHOD))
+    plt.title(
+      "{}: {} level {} adversary robustness".format(
+        TARGET_MODEL, ATTACK_METHOD, BUDGET_LEVEL
+      )
+    )
     plt.tight_layout()
 
     # save plot to local
-    plt.savefig("plots/{}_{}.png".format(TARGET_MODEL, ATTACK_METHOD), dpi=100)
+    if not os.path.exists(PLOT_SAVE_PATH):
+      os.makedirs(PLOT_SAVE_PATH)
+    plt.savefig(
+      os.path.join(PLOT_SAVE_PATH, PLOT_SAVE_NAME), dpi=100,
+    )
     plt.show()
 
 

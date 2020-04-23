@@ -29,7 +29,7 @@ from utils import utils
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "fgsm"
 # Perturbation budget: levels 1,2,3,4
-BUDGET_LEVEL = 1
+BUDGET_LEVEL = 4
 
 SAVE_DIST = False
 SAVE_ADVS = True
@@ -95,11 +95,14 @@ CLASS_NAMES = [
 ]
 
 BATCH_SIZE = 4
-# testing: 1 x 1, normal: 10 x 10
 DATASET_IMAGE_NUM = 10
 DATASET_PATH = "../data/imagenette2-160/val"
+
 ADV_SAVE_PATH = os.path.join("advs", TARGET_MODEL, ATTACK_METHOD)
 ADV_SAVE_NAME = "adv_level{}.npy".format(BUDGET_LEVEL)
+
+DIST_PLOT_SAVE_PATH = os.path.join("dist_plots", TARGET_MODEL)
+DIST_PLOT_SAVE_NAME = "{}_level{}_dist".format(ATTACK_METHOD, BUDGET_LEVEL)
 
 
 def init_models(model_name):
@@ -191,8 +194,10 @@ def plot_distances(distances):
   if DIST_PLOT_VISUAL:
     plt.show()
   else:
+    if not os.path.exists(DIST_PLOT_SAVE_PATH):
+      os.makedirs(DIST_PLOT_SAVE_PATH)
     plt.savefig(
-      "dist_plots/{}_level{}_dist".format(TARGET_MODEL, BUDGET_LEVEL), dpi=100
+      os.path.join(DIST_PLOT_SAVE_PATH, DIST_PLOT_SAVE_NAME), dpi=100,
     )
 
 
