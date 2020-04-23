@@ -31,12 +31,12 @@ from utils import utils
 # Models: resnet, vgg, mobilenet, inception
 # Attacks: fgsm, bim, mim, df, cw, hsj, ga
 MODEL_NAME = "resnet"
-ATTACK_MTD = "fgsm"
+ATTACK_MTD = "hsj"
 
 SAVE_RESULTS = True
 PLOT_RESULTS = True
 
-ADV_SAVE_PATH = "advs/{}/{}/0417_0546_0.031_adv.npy".format(
+ADV_SAVE_PATH = "advs/{}/{}/0422_0903_0.500_adv.npy".format(
   MODEL_NAME, ATTACK_MTD
 )
 
@@ -128,7 +128,7 @@ def plot_results(original_data, flattened_data):
       Line2D([0], [0], color=color_val[2], lw=4),
     ]
 
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(8, 5))
     bars = plt.bar(keys, data, color=colors, width=0.3)
     plt.hlines(avg_05, 1, 5, colors=color_val[0.5], linestyles="dashed")
     plt.hlines(avg_2, 6, 10, colors=color_val[2], linestyles="dashed")
@@ -150,10 +150,11 @@ def plot_results(original_data, flattened_data):
     plt.ylim(0, np.max(data) * 1.2)
     plt.legend(custom_lgd, ["control group", "scale ×0.5", "scale ×2"])
     plt.title("{}: {} adversary robustness".format(MODEL_NAME, ATTACK_MTD))
-    plt.show()
+    plt.tight_layout()
 
     # save plot to local
-    plt.savefig("plots/{}_{}.png".format(MODEL_NAME, ATTACK_MTD))
+    plt.savefig("plots/{}_{}.png".format(MODEL_NAME, ATTACK_MTD), dpi=100)
+    plt.show()
 
 
 # %%
