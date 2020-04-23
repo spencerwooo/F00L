@@ -32,7 +32,7 @@ from utils import utils
 # Attacks: fgsm, bim, mim, df, cw, hsj, ga
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "fgsm"
-BUDGET_LEVEL = 4
+BUDGET_LEVEL = 1
 
 SAVE_RESULTS = True
 PLOT_RESULTS = True
