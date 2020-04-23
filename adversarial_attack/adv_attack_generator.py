@@ -10,7 +10,6 @@ Perform adversarial attacks on CNNs
 
 import os
 import time
-from datetime import datetime
 
 import foolbox
 import foolbox.attacks as fa
@@ -25,18 +24,57 @@ from tqdm import tqdm
 
 from utils import utils
 
-NOW = datetime.now()
-
-# Methods: fgsm / bim / mim / df / cw | hsj / ga
-ATTACK_METHOD = "hsj"
 # Models: resnet / vgg / mobilenet / inception
+# Methods: fgsm / bim / mim / df / cw | hsj / ga
 TARGET_MODEL = "resnet"
-# Perturbation threshold: L∞ - 8/255, L2 - 5 (GenAttack: L∞ - 0.5)
-THRESHOLD = 0.5
+ATTACK_METHOD = "fgsm"
+# Perturbation budget: levels 1,2,3,4
+BUDGET_LEVEL = 1
 
 SAVE_DIST = False
 SAVE_ADVS = True
-SCATTER_PLOT_DIST = False
+
+# Save distance plot to local or visualize plot directly
+DIST_PLOT_VISUAL = False
+
+THRESHOLD = {
+  1: {
+    "fgsm": 4 / 255,
+    "bim": 4 / 255,
+    "mim": 4 / 255,
+    "df": 3,
+    "cw": 3,
+    "hsj": 0.3,
+    "ga": 0.3,
+  },
+  2: {
+    "fgsm": 8 / 255,
+    "bim": 8 / 255,
+    "mim": 8 / 255,
+    "df": 5,
+    "cw": 5,
+    "hsj": 0.5,
+    "ga": 0.5,
+  },
+  3: {
+    "fgsm": 16 / 255,
+    "bim": 16 / 255,
+    "mim": 16 / 255,
+    "df": 8,
+    "cw": 8,
+    "hsj": 0.8,
+    "ga": 0.8,
+  },
+  4: {
+    "fgsm": 32 / 255,
+    "bim": 32 / 255,
+    "mim": 32 / 255,
+    "df": 10,
+    "cw": 10,
+    "hsj": 1,
+    "ga": 1,
+  },
+}
 
 MODEL_RESNET_PATH = "../models/200224_0901_resnet_imagenette.pth"
 MODEL_VGG_PATH = "../models/200226_0225_vgg11_imagenette.pth"
@@ -61,7 +99,7 @@ BATCH_SIZE = 4
 DATASET_IMAGE_NUM = 10
 DATASET_PATH = "../data/imagenette2-160/val"
 ADV_SAVE_PATH = os.path.join("advs", TARGET_MODEL, ATTACK_METHOD)
-ADV_SAVE_NAME = "{}_{:.3f}_adv.npy".format(NOW.strftime("%m%d_%H%M"), THRESHOLD)
+ADV_SAVE_NAME = "adv_level{}.npy".format(BUDGET_LEVEL)
 
 
 def init_models(model_name):
@@ -102,13 +140,22 @@ def attack_params(att, image, label):
   """ Inject attack parameters into attack() function """
 
   params = {
-    "fgsm": {"epsilons": [THRESHOLD]},
-    "mim": {"binary_search": False, "epsilon": THRESHOLD},
-    "bim": {"binary_search": False, "epsilon": THRESHOLD},
+    "fgsm": {"epsilons": [THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD]]},
+    "mim": {
+      "binary_search": False,
+      "epsilon": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
+    },
+    "bim": {
+      "binary_search": False,
+      "epsilon": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
+    },
     "df": {},
     "cw": {},
     "hsj": {"batch_size": BATCH_SIZE},
-    "ga": {"binary_search": False, "epsilon": THRESHOLD},
+    "ga": {
+      "binary_search": False,
+      "epsilon": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
+    },
   }
 
   for key in params:
@@ -122,19 +169,31 @@ def plot_distances(distances):
   """ Plot distances between adversaries and originals. """
 
   rcParams["font.family"] = "monospace"
+  cmap = plt.cm.Dark2
 
   indice = np.arange(0, len(distances), 1)
-  plt.scatter(indice, distances)
-  plt.hlines(y=THRESHOLD, xmin=0, xmax=len(distances), colors="r")
+  plt.scatter(indice, distances, c=[cmap(i) for i in np.linspace(0, 1, 100)])
+  plt.axhline(
+    y=THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD], color=cmap(0),
+  )
 
   plt.ylabel("Distance")
-  plt.ylim(0, THRESHOLD * 2)
+  plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 2)
 
   plt.xlabel("Adversaries")
-
-  plt.title("Attack: {} - Threshold: {:.5f}".format(ATTACK_METHOD, THRESHOLD))
+  plt.title(
+    "Attack: {} - Level: {} - Threshold: {:.5f}".format(
+      ATTACK_METHOD, BUDGET_LEVEL, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD]
+    )
+  )
   plt.grid(axis="y")
-  plt.show()
+
+  if DIST_PLOT_VISUAL:
+    plt.show()
+  else:
+    plt.savefig(
+      "dist_plots/{}_level{}_dist".format(TARGET_MODEL, BUDGET_LEVEL), dpi=100
+    )
 
 
 def main():
@@ -192,7 +251,11 @@ def main():
 
       # For attacks with minimization approaches (deep fool, cw),
       # if distance larger than threshold, we consider attack failed
-      if _lp > THRESHOLD and ATTACK_METHOD in ["df", "cw", "hsj"]:
+      if _lp > THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] and ATTACK_METHOD in [
+        "df",
+        "cw",
+        "hsj",
+      ]:
         _lp = 0.0
         single_adv = single_img
 
@@ -226,9 +289,7 @@ def main():
   )
   time.sleep(0.5)
 
-  # Whether or not to plot the distances
-  if SCATTER_PLOT_DIST:
-    plot_distances(distances)
+  plot_distances(distances)
 
   # Save generated adversaries
   if SAVE_ADVS:

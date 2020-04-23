@@ -30,14 +30,15 @@ from utils import utils
 
 # Models: resnet, vgg, mobilenet, inception
 # Attacks: fgsm, bim, mim, df, cw, hsj, ga
-MODEL_NAME = "resnet"
-ATTACK_MTD = "hsj"
+TARGET_MODEL = "resnet"
+ATTACK_METHOD = "fgsm"
+BUDGET_LEVEL = 1
 
 SAVE_RESULTS = True
 PLOT_RESULTS = True
 
-ADV_SAVE_PATH = "advs/{}/{}/0422_0903_0.500_adv.npy".format(
-  MODEL_NAME, ATTACK_MTD
+ADV_SAVE_PATH = "advs/{}/{}/adv_level{}.npy".format(
+  TARGET_MODEL, ATTACK_METHOD, BUDGET_LEVEL
 )
 
 MODEL_RESNET_PATH = "../models/200224_0901_resnet_imagenette.pth"
@@ -63,7 +64,7 @@ DATASET_IMAGE_NUM = 10
 DATASET_PATH = "../data/imagenette2-160/val"
 
 
-def init_models(model_name):
+def init_models():
   """ Initialize pretrained CNN models """
 
   model_path = {
@@ -74,8 +75,8 @@ def init_models(model_name):
   }
 
   loaded_model = utils.load_trained_model(
-    model_name=model_name,
-    model_path=model_path.get(model_name),
+    model_name=TARGET_MODEL,
+    model_path=model_path.get(TARGET_MODEL),
     class_num=len(CLASS_NAMES),
   )
   return loaded_model
@@ -87,9 +88,9 @@ def save_results_csv(data):
   if SAVE_RESULTS:
     fields = list(data.keys())
     fields.insert(0, "ATTACK_METHODS")
-    data["ATTACK_METHODS"] = ATTACK_MTD
+    data["ATTACK_METHODS"] = ATTACK_METHOD
 
-    csv_file_path = "results/{}.csv".format(MODEL_NAME)
+    csv_file_path = "results/{}.csv".format(TARGET_MODEL)
     file_exists = os.path.isfile(csv_file_path)
     with open(csv_file_path, "a+") as f:
       writer = csv.DictWriter(f, fieldnames=fields)
@@ -149,18 +150,18 @@ def plot_results(original_data, flattened_data):
     plt.ylabel("attack success rate (%)")
     plt.ylim(0, np.max(data) * 1.2)
     plt.legend(custom_lgd, ["control group", "scale ×0.5", "scale ×2"])
-    plt.title("{}: {} adversary robustness".format(MODEL_NAME, ATTACK_MTD))
+    plt.title("{}: {} adversary robustness".format(TARGET_MODEL, ATTACK_METHOD))
     plt.tight_layout()
 
     # save plot to local
-    plt.savefig("plots/{}_{}.png".format(MODEL_NAME, ATTACK_MTD), dpi=100)
+    plt.savefig("plots/{}_{}.png".format(TARGET_MODEL, ATTACK_METHOD), dpi=100)
     plt.show()
 
 
 # %%
 # Validate adv -> Rescale -> Validate scaled adv
 
-model = init_models(MODEL_NAME)
+model = init_models()
 preprocessing = dict(
   mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3
 )
