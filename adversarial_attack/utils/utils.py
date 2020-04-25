@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 def load_trained_model(model_name=None, model_path="", class_num=10):

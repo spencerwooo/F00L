@@ -20,7 +20,7 @@ from foolbox.criteria import TargetClass
 from foolbox.distances import Linf
 from matplotlib import rcParams
 from numpy.linalg import norm
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from utils import utils
 
@@ -29,13 +29,13 @@ from utils import utils
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "hsj"
 # Perturbation budget: levels 1,2,3,4
-BUDGET_LEVEL = 2
+BUDGET_LEVEL = 4
 
 SAVE_DIST = False
-SAVE_ADVS = True
+SAVE_ADVS = False
 
 # Save distance plot to local or visualize plot directly
-DIST_PLOT_VISUAL = False
+DIST_PLOT_VISUAL = True
 
 THRESHOLD = {
   1: {
@@ -277,7 +277,7 @@ def main():
   # Total attack time
   toc = time.time()
   time_elapsed = toc - tic
-  print(
+  pbar.write(
     "Adversaries generated in: {:.2f}m {:.2f}s".format(
       time_elapsed // 60, time_elapsed % 60
     )
@@ -287,7 +287,7 @@ def main():
   distances = np.asarray(distances)
   if SAVE_DIST:
     np.save("dist_{}.npy".format(ATTACK_METHOD), distances)
-  print(
+  pbar.write(
     "Distance: min {:.5f}, mean {:.5f}, max {:.5f}".format(
       distances.min(), np.median(distances), distances.max()
     )
