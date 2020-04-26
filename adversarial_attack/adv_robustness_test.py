@@ -24,15 +24,15 @@ import numpy as np
 import torch
 from matplotlib import rcParams
 from matplotlib.lines import Line2D
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from utils import utils
 
 # Models: resnet, vgg, mobilenet, inception
 # Attacks: fgsm, bim, mim, df, cw, hsj, ga
 TARGET_MODEL = "resnet"
-ATTACK_METHOD = "fgsm"
-BUDGET_LEVEL = 1
+ATTACK_METHOD = "hsj"
+BUDGET_LEVEL = 3
 
 SAVE_RESULTS = True
 PLOT_RESULTS = True

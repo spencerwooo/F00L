@@ -29,7 +29,7 @@ from utils import utils
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "hsj"
 # Perturbation budget: levels 1,2,3,4
-BUDGET_LEVEL = 4
+BUDGET_LEVEL = 3
 
 SAVE_DIST = False
 SAVE_ADVS = False
