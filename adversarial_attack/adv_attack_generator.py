@@ -29,7 +29,7 @@ from utils import utils
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "hsj"
 # Perturbation budget: levels 1,2,3,4
-BUDGET_LEVEL = 3
+BUDGET_LEVEL = 2
 
 SAVE_DIST = False
 SAVE_ADVS = False
@@ -154,7 +154,13 @@ def attack_params(att, image, label):
     },
     "df": {},
     "cw": {},
-    "hsj": {"batch_size": BATCH_SIZE},
+    "hsj": {
+      "batch_size": BATCH_SIZE,
+      "iterations": 10,
+      "initial_num_evals": 10,
+      "max_num_evals": 1000,
+      "gamma": 0.5,
+    },
     "ga": {
       "binary_search": False,
       "epsilon": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
@@ -175,13 +181,18 @@ def plot_distances(distances):
   cmap = plt.cm.Dark2
 
   indice = np.arange(0, len(distances), 1)
-  plt.scatter(indice, distances, c=[cmap(i) for i in np.linspace(0, 1, 100)])
-  plt.axhline(
-    y=THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD], color=cmap(0),
+  plt.scatter(
+    indice,
+    distances,
+    c=[
+      cmap(i) for i in np.linspace(0, 1, DATASET_IMAGE_NUM * DATASET_IMAGE_NUM)
+    ],
   )
+  plt.axhline(y=THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD], color=cmap(0))
 
   plt.ylabel("Distance")
   plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 2)
+  # plt.ylim(0, 1.0)
 
   plt.xlabel("Adversaries")
   plt.title(
@@ -193,12 +204,13 @@ def plot_distances(distances):
 
   if DIST_PLOT_VISUAL:
     plt.show()
-  else:
-    if not os.path.exists(DIST_PLOT_SAVE_PATH):
-      os.makedirs(DIST_PLOT_SAVE_PATH)
-    plt.savefig(
-      os.path.join(DIST_PLOT_SAVE_PATH, DIST_PLOT_SAVE_NAME), dpi=100,
-    )
+  # ! Debug mode, uncomment below when finished!
+  # else:
+  #   if not os.path.exists(DIST_PLOT_SAVE_PATH):
+  #     os.makedirs(DIST_PLOT_SAVE_PATH)
+  #   plt.savefig(
+  #     os.path.join(DIST_PLOT_SAVE_PATH, DIST_PLOT_SAVE_NAME), dpi=100,
+  #   )
 
 
 def main():
@@ -227,7 +239,7 @@ def main():
   # * 1/3: Validate model's base prediction accuracy (about 97%)
   utils.validate(fmodel, dataset_loader, dataset_size, batch_size=BATCH_SIZE)
 
-  # * 2/3: Perform an adversarial attack with blackbox attack
+  # * 2/3: Perform an adversarial attack
   attack = attack_switcher(ATTACK_METHOD, fmodel)
 
   tic = time.time()
@@ -254,7 +266,7 @@ def main():
         perturb.flatten(), 2 if ATTACK_METHOD in ["cw", "df"] else np.inf
       )
 
-      # For attacks with minimization approaches (deep fool, cw),
+      # For attacks with minimization approaches (deep fool, cw, hop skip jump),
       # if distance larger than threshold, we consider attack failed
       if _lp > THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] and ATTACK_METHOD in [
         "df",
@@ -277,7 +289,7 @@ def main():
   # Total attack time
   toc = time.time()
   time_elapsed = toc - tic
-  pbar.write(
+  print(
     "Adversaries generated in: {:.2f}m {:.2f}s".format(
       time_elapsed // 60, time_elapsed % 60
     )
@@ -287,12 +299,12 @@ def main():
   distances = np.asarray(distances)
   if SAVE_DIST:
     np.save("dist_{}.npy".format(ATTACK_METHOD), distances)
-  pbar.write(
+  print(
     "Distance: min {:.5f}, mean {:.5f}, max {:.5f}".format(
       distances.min(), np.median(distances), distances.max()
     )
   )
-  time.sleep(0.5)
+  # time.sleep(0.5)
 
   plot_distances(distances)
 
