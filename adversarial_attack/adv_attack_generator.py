@@ -23,13 +23,14 @@ from numpy.linalg import norm
 from tqdm.auto import tqdm
 
 from utils import utils
+from custom_attacks import LimitedHopSkipJumpAttack
 
 # Models: resnet / vgg / mobilenet / inception
 # Methods: fgsm / bim / mim / df / cw | hsj / ga
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "hsj"
 # Perturbation budget: levels 1,2,3,4
-BUDGET_LEVEL = 2
+BUDGET_LEVEL = 1
 
 SAVE_DIST = False
 SAVE_ADVS = False
@@ -44,7 +45,7 @@ THRESHOLD = {
     "mim": 4 / 255,
     "df": 3,
     "cw": 3,
-    "hsj": 0.3,
+    "hsj": 0.25,
     "ga": 0.3,
   },
   2: {
@@ -62,8 +63,8 @@ THRESHOLD = {
     "mim": 16 / 255,
     "df": 8,
     "cw": 8,
-    "hsj": 0.8,
-    "ga": 0.8,
+    "hsj": 0.7,
+    "ga": 0.7,
   },
   4: {
     "fgsm": 32 / 255,
@@ -71,8 +72,8 @@ THRESHOLD = {
     "mim": 32 / 255,
     "df": 10,
     "cw": 10,
-    "hsj": 1,
-    "ga": 1,
+    "hsj": 0.9,
+    "ga": 0.9,
   },
 }
 
@@ -132,7 +133,7 @@ def attack_switcher(att, fmodel):
     "mim": fa.MomentumIterativeAttack(fmodel, distance=Linf),
     "df": fa.DeepFoolL2Attack(fmodel),
     "cw": fa.CarliniWagnerL2Attack(fmodel),
-    "hsj": fa.HopSkipJumpAttack(fmodel, distance=Linf),
+    "hsj": LimitedHopSkipJumpAttack(fmodel, distance=Linf),
     "ga": fa.GenAttack(fmodel, criterion=TargetClass(9), distance=Linf),
   }
 
@@ -159,7 +160,9 @@ def attack_params(att, image, label):
       "iterations": 10,
       "initial_num_evals": 10,
       "max_num_evals": 1000,
-      "gamma": 0.5,
+      "gamma": 1.0,
+      "stepsize_search": "grid_search",
+      "expected_threshold": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
     },
     "ga": {
       "binary_search": False,
@@ -191,8 +194,8 @@ def plot_distances(distances):
   plt.axhline(y=THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD], color=cmap(0))
 
   plt.ylabel("Distance")
-  plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 2)
-  # plt.ylim(0, 1.0)
+  # plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 2)
+  plt.ylim(0, 1.0)
 
   plt.xlabel("Adversaries")
   plt.title(
