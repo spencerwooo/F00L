@@ -30,7 +30,7 @@ from custom_attacks import LimitedHopSkipJumpAttack
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "hsj"
 # Perturbation budget: levels 1,2,3,4
-BUDGET_LEVEL = 1
+BUDGET_LEVEL = 3
 
 SAVE_DIST = False
 SAVE_ADVS = False
@@ -45,8 +45,8 @@ THRESHOLD = {
     "mim": 4 / 255,
     "df": 3,
     "cw": 3,
-    "hsj": 0.25,
-    "ga": 0.3,
+    "hsj": 64 / 255,
+    "ga": 64 / 255,
   },
   2: {
     "fgsm": 8 / 255,
@@ -54,8 +54,8 @@ THRESHOLD = {
     "mim": 8 / 255,
     "df": 5,
     "cw": 5,
-    "hsj": 0.5,
-    "ga": 0.5,
+    "hsj": 72 / 255,
+    "ga": 72 / 255,
   },
   3: {
     "fgsm": 16 / 255,
@@ -63,8 +63,8 @@ THRESHOLD = {
     "mim": 16 / 255,
     "df": 8,
     "cw": 8,
-    "hsj": 0.7,
-    "ga": 0.7,
+    "hsj": 80 / 255,
+    "ga": 80 / 255,
   },
   4: {
     "fgsm": 32 / 255,
@@ -72,8 +72,8 @@ THRESHOLD = {
     "mim": 32 / 255,
     "df": 10,
     "cw": 10,
-    "hsj": 0.9,
-    "ga": 0.9,
+    "hsj": 88 / 255,
+    "ga": 88 / 255,
   },
 }
 
@@ -157,11 +157,10 @@ def attack_params(att, image, label):
     "cw": {},
     "hsj": {
       "batch_size": BATCH_SIZE,
-      "iterations": 10,
+      "iterations": 64,
       "initial_num_evals": 10,
       "max_num_evals": 1000,
-      "gamma": 1.0,
-      "stepsize_search": "grid_search",
+      "gamma": 0.1,
       "expected_threshold": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
     },
     "ga": {
@@ -194,8 +193,8 @@ def plot_distances(distances):
   plt.axhline(y=THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD], color=cmap(0))
 
   plt.ylabel("Distance")
-  # plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 2)
-  plt.ylim(0, 1.0)
+  # plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 1.2)
+  plt.ylim(0, 0.7)
 
   plt.xlabel("Adversaries")
   plt.title(
@@ -268,6 +267,10 @@ def main():
       _lp = norm(
         perturb.flatten(), 2 if ATTACK_METHOD in ["cw", "df"] else np.inf
       )
+      # _lp = (
+      #   norm(perturb) if ATTACK_METHOD in ["cw", "df"] else np.max(abs(perturb))
+      # )
+      print("[Norm calcu] dist: {:.3f}".format(_lp))
 
       # For attacks with minimization approaches (deep fool, cw, hop skip jump),
       # if distance larger than threshold, we consider attack failed
@@ -276,7 +279,7 @@ def main():
         "cw",
         "hsj",
       ]:
-        _lp = 0.0
+        # _lp = 0.0
         single_adv = single_img
 
       if np.isnan(_lp):
