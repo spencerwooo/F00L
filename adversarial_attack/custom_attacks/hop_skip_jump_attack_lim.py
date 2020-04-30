@@ -16,28 +16,28 @@ from foolbox.distances import MSE, Linf
 
 class LimitedHopSkipJumpAttack(Attack):
   """A powerful adversarial attack that requires neither gradients
-    nor probabilities.
+  nor probabilities.
 
-    Notes
-    -----
-    - ability to switch between two types of distances: MSE and Linf.
-    - ability to continue previous attacks by passing an instance of the
-      Adversarial class
-    - ability to pass an explicit starting point; especially to initialize
-      a targeted attack
-    - ability to pass an alternative attack used for initialization
-    - ability to specify the batch size
+  Notes
+  -----
+  - ability to switch between two types of distances: MSE and Linf.
+  - ability to continue previous attacks by passing an instance of the
+    Adversarial class
+  - ability to pass an explicit starting point; especially to initialize
+    a targeted attack
+  - ability to pass an alternative attack used for initialization
+  - ability to specify the batch size
 
-    HopSkipJumpAttack was originally proposed by Chen, Jordan and
-    Wainwright. It is a decision-based attack that requires access to output
-    labels of a model alone.
-    The implementation in Foolbox is based on Boundary Attack.
+  HopSkipJumpAttack was originally proposed by Chen, Jordan and
+  Wainwright. It is a decision-based attack that requires access to output
+  labels of a model alone.
+  The implementation in Foolbox is based on Boundary Attack.
 
-    References
-    ----------
-    .. [1] https://arxiv.org/abs/1904.02144
+  References
+  ----------
+  .. [1] https://arxiv.org/abs/1904.02144
 
-    """
+  """
 
   @generator_decorator
   def as_generator(
@@ -57,52 +57,52 @@ class LimitedHopSkipJumpAttack(Attack):
   ):
     """Applies HopSkipJumpAttack.
 
-        Parameters
-        ----------
-        input_or_adv : `numpy.ndarray` or :class:`Adversarial`
-            The original, correctly classified input. If it is a
-            numpy array, label must be passed as well. If it is
-            an :class:`Adversarial` instance, label must not be passed.
-        label : int
-            The reference label of the original input. Must be passed
-            if input is a numpy array, must not be passed if input is
-            an :class:`Adversarial` instance.
-        unpack : bool
-            If true, returns the adversarial input, otherwise returns
-            the Adversarial object.
-        iterations : int
-            Number of iterations to run.
-        initial_num_evals: int
-            Initial number of evaluations for gradient estimation.
-            Larger initial_num_evals increases time efficiency, but
-            may decrease query efficiency.
-        max_num_evals: int
-            Maximum number of evaluations for gradient estimation.
-        stepsize_search: str
-            How to search for stepsize; choices are 'geometric_progression',
-            'grid_search'. 'geometric progression' initializes the stepsize
-            by ||x_t - x||_p / sqrt(iteration), and keep decreasing by half
-            until reaching the target side of the boundary. 'grid_search'
-            chooses the optimal epsilon over a grid, in the scale of
-            ||x_t - x||_p.
-        gamma: float
-            The binary search threshold theta is gamma / d^1.5 for
-                   l2 attack and gamma / d^2 for linf attack.
+    Parameters
+    ----------
+    input_or_adv : `numpy.ndarray` or :class:`Adversarial`
+        The original, correctly classified input. If it is a
+        numpy array, label must be passed as well. If it is
+        an :class:`Adversarial` instance, label must not be passed.
+    label : int
+        The reference label of the original input. Must be passed
+        if input is a numpy array, must not be passed if input is
+        an :class:`Adversarial` instance.
+    unpack : bool
+        If true, returns the adversarial input, otherwise returns
+        the Adversarial object.
+    iterations : int
+        Number of iterations to run.
+    initial_num_evals: int
+        Initial number of evaluations for gradient estimation.
+        Larger initial_num_evals increases time efficiency, but
+        may decrease query efficiency.
+    max_num_evals: int
+        Maximum number of evaluations for gradient estimation.
+    stepsize_search: str
+        How to search for stepsize; choices are 'geometric_progression',
+        'grid_search'. 'geometric progression' initializes the stepsize
+        by ||x_t - x||_p / sqrt(iteration), and keep decreasing by half
+        until reaching the target side of the boundary. 'grid_search'
+        chooses the optimal epsilon over a grid, in the scale of
+        ||x_t - x||_p.
+    gamma: float
+        The binary search threshold theta is gamma / d^1.5 for
+                l2 attack and gamma / d^2 for linf attack.
 
-        starting_point : `numpy.ndarray`
-            Adversarial input to use as a starting point, required
-            for targeted attacks.
-        batch_size : int
-            Batch size for model prediction.
-        internal_dtype : np.float32 or np.float64
-            Higher precision might be slower but is numerically more stable.
-        log_every_n_steps : int
-            Determines verbositity of the logging.
-        loggingLevel : int
-            Controls the verbosity of the logging, e.g. logging.INFO
-            or logging.WARNING.
+    starting_point : `numpy.ndarray`
+        Adversarial input to use as a starting point, required
+        for targeted attacks.
+    batch_size : int
+        Batch size for model prediction.
+    internal_dtype : np.float32 or np.float64
+        Higher precision might be slower but is numerically more stable.
+    log_every_n_steps : int
+        Determines verbositity of the logging.
+    loggingLevel : int
+        Controls the verbosity of the logging, e.g. logging.INFO
+        or logging.WARNING.
 
-        """
+    """
 
     self.initial_num_evals = initial_num_evals
     self.max_num_evals = max_num_evals
@@ -139,9 +139,9 @@ class LimitedHopSkipJumpAttack(Attack):
 
   def attack(self, a, iterations):
     """
-        iterations : int
-            Maximum number of iterations to run.
-        """
+    iterations : int
+        Maximum number of iterations to run.
+    """
     self.t_initial = time.time()
 
     # ===========================================================
@@ -215,6 +215,8 @@ class LimitedHopSkipJumpAttack(Attack):
     # get original and starting point in the right format
     original = a.unperturbed.astype(self.internal_dtype)
     perturbed = a.perturbed.astype(self.internal_dtype)
+
+    initial_dist = self.compute_distance(perturbed, original)
 
     # ===========================================================
     # Iteratively refine adversarial
@@ -301,10 +303,10 @@ class LimitedHopSkipJumpAttack(Attack):
       # compute new distance.
       dist = self.compute_distance(perturbed, original)
 
-      # ! If distance is lower than threshold, stop attack
-      print("step {}: dist: {:.5f}, threshold: {:.5f}".format(step, dist, self.expected_threshold))
+      # * If distance is sufficiently close to expected threshold, then stop the attack.
       if not self.expected_threshold is None:
-        if dist <= self.expected_threshold:
+        diff = self.expected_threshold - dist
+        if 0 <= diff <= 4 / 255:
           break
 
       # ===========================================================
@@ -318,6 +320,13 @@ class LimitedHopSkipJumpAttack(Attack):
       message = " (took {:.5f} seconds)".format(t2 - t0)
       self.log_step(step, distance, message)
       sys.stdout.flush()
+
+    # ! print final distance
+    print(
+      "[Final iter] step {:>2}: initial dist: {:.3f}, final dist: {:.3f}, threshold: {:.3f}".format(
+        step, initial_dist, dist, self.expected_threshold
+      )
+    )
 
     # ===========================================================
     # Log overall runtime
@@ -354,10 +363,10 @@ class LimitedHopSkipJumpAttack(Attack):
       return  # type: ignore
 
     """
-        Apply BlendedUniformNoiseAttack if without
-        initialization.
-        Efficient Implementation of BlendedUniformNoiseAttack in Foolbox.
-        """
+    Apply BlendedUniformNoiseAttack if without
+    initialization.
+    Efficient Implementation of BlendedUniformNoiseAttack in Foolbox.
+    """
     success = 0
     num_evals = 0
 
@@ -374,7 +383,7 @@ class LimitedHopSkipJumpAttack(Attack):
       if num_evals > 1e4:
         return
 
-    # Binary search to minimize l2 distance to the original input.
+    # ! Why??? Binary search to minimize l2 distance to the original input.
     low = 0.0
     high = 1.0
     while high - low > 0.001:
@@ -390,7 +399,8 @@ class LimitedHopSkipJumpAttack(Attack):
     if self.constraint == "l2":
       return np.linalg.norm(x1 - x2)
     elif self.constraint == "linf":
-      return np.max(abs(x1 - x2))
+      # return np.max(abs(x1 - x2))
+      return np.linalg.norm((x1 - x2).flatten(), np.inf)
 
   def project(self, unperturbed, perturbed_inputs, alphas):
     """ Projection onto given l2 / linf balls in a batch. """
@@ -439,6 +449,12 @@ class LimitedHopSkipJumpAttack(Attack):
       lows = np.where(decisions == 0, mids, lows)
       highs = np.where(decisions == 1, mids, highs)
 
+      # if mids <= self.expected_threshold:
+      #   break
+
+      if 0 <= self.expected_threshold - mids <= 4 / 255:
+        break
+
     out_inputs = self.project(unperturbed, perturbed_inputs, highs)
 
     # Compute distance of the output to select the best choice.
@@ -454,9 +470,9 @@ class LimitedHopSkipJumpAttack(Attack):
 
   def select_delta(self, dist_post_update, current_iteration):
     """
-        Choose the delta at the scale of distance
-        between x and perturbed sample.
-        """
+    Choose the delta at the scale of distance
+    between x and perturbed sample.
+    """
     if current_iteration == 1:
       delta = 0.1 * (self.clip_max - self.clip_min)
     else:
@@ -502,9 +518,9 @@ class LimitedHopSkipJumpAttack(Attack):
     self, x, update, dist, decision_function, current_iteration
   ):
     """ Geometric progression to search for stepsize.
-          Keep decreasing stepsize by half until reaching
-          the desired side of the boundary.
-        """
+      Keep decreasing stepsize by half until reaching
+      the desired side of the boundary.
+    """
     epsilon = dist / np.sqrt(current_iteration)
     while True:
       updated = np.clip(x + epsilon * update, self.clip_min, self.clip_max)
