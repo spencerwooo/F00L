@@ -2,11 +2,10 @@
 
 # -*- coding: utf-8 -*-
 import os
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
 
-# %%
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import rcParams
 
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "hsj"
@@ -59,11 +58,18 @@ def plot_distances(distances, save_plot=False):
     )
 
 
-# Read HSJA distance file
-dist_str = []
-with open(DIST_FILE_PATH, "r") as f:
-  for line in f.readlines():
-    dist_str.append(line)
+def main():
+  """ Read file and plot! """
 
-dists = np.array(dist_str).astype(np.float32)
-plot_distances(dists, save_plot=False)
+  dist_str = []
+  # Read HSJA distance file
+  with open(DIST_FILE_PATH, "r") as f:
+    for line in f.readlines():
+      dist_str.append(line)
+
+  dists = np.array(dist_str).astype(np.float32)
+  plot_distances(dists, save_plot=False)
+
+
+if __name__ == "__main__":
+  main()
