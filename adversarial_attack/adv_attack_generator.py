@@ -36,7 +36,8 @@ SAVE_DIST = False
 SAVE_ADVS = True
 
 # Save distance plot to local or visualize plot directly
-DIST_PLOT_VISUAL = True
+# ! Note that this value won't affect HSJA plotting behavior -- not plotting
+DIST_PLOT_VISUAL = False
 
 THRESHOLD = {
   1: {
