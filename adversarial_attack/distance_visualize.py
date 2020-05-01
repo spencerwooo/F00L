@@ -11,14 +11,19 @@ from matplotlib import rcParams
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "hsj"
 BUDGET_LEVEL = 1
-THRESHOLD = 88 / 255
+
+THRESHOLD = {
+  1: 64 / 255,
+  2: 72 / 255,
+  3: 80 / 255,
+  4: 88 / 255,
+}
+
 # DIST_FILE_PATH = os.path.join("hsja_dists", TARGET_MODEL, "hsja_0.345_dist.txt")
-DIST_FILE_PATH = "hsja_{:.3f}_dist.txt".format(THRESHOLD)
+DIST_FILE_PATH = "hsja_{:.3f}_dist.txt".format(THRESHOLD[BUDGET_LEVEL])
 
 DIST_PLOT_SAVE_PATH = os.path.join("dist_plots", TARGET_MODEL)
 DIST_PLOT_SAVE_NAME = "{}_level{}_dist".format(ATTACK_METHOD, BUDGET_LEVEL)
-
-DATASET_IMAGE_NUM = 10
 
 
 def plot_distances(distances, save_plot=False):
@@ -31,16 +36,16 @@ def plot_distances(distances, save_plot=False):
   plt.scatter(
     indice, distances, c=[cmap(i) for i in np.linspace(0, 1, len(distances))],
   )
-  plt.axhline(y=THRESHOLD, color=cmap(0))
+  plt.axhline(y=THRESHOLD[BUDGET_LEVEL], color=cmap(0))
 
   plt.ylabel("Distance")
-  # plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 1.2)
+  # plt.ylim(0, THRESHOLD[BUDGET_LEVEL] * 1.2)
   plt.ylim(0, 0.6)
 
   plt.xlabel("Adversaries")
   plt.title(
     "Attack: {} - Level: {} - Threshold: {:.5f}".format(
-      ATTACK_METHOD, BUDGET_LEVEL, THRESHOLD
+      ATTACK_METHOD, BUDGET_LEVEL, THRESHOLD[BUDGET_LEVEL]
     )
   )
   plt.grid(axis="y")
