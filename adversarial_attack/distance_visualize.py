@@ -9,7 +9,8 @@ from matplotlib import rcParams
 
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "hsj"
-BUDGET_LEVEL = 1
+BUDGET_LEVEL = 3
+SAVE_DIST_PLOT = True
 
 THRESHOLD = {
   1: 64 / 255,
@@ -18,8 +19,12 @@ THRESHOLD = {
   4: 88 / 255,
 }
 
-# DIST_FILE_PATH = os.path.join("hsja_dists", TARGET_MODEL, "hsja_0.345_dist.txt")
-DIST_FILE_PATH = "hsja_{:.3f}_dist.txt".format(THRESHOLD[BUDGET_LEVEL])
+DIST_FILE_PATH = os.path.join(
+  "hsja_dists",
+  TARGET_MODEL,
+  "hsja_{:.3f}_dist.txt".format(THRESHOLD[BUDGET_LEVEL]),
+)
+# DIST_FILE_PATH = "hsja_{:.3f}_dist.txt".format(THRESHOLD[BUDGET_LEVEL])
 
 DIST_PLOT_SAVE_PATH = os.path.join("dist_plots", TARGET_MODEL)
 DIST_PLOT_SAVE_NAME = "{}_level{}_dist".format(ATTACK_METHOD, BUDGET_LEVEL)
@@ -49,13 +54,14 @@ def plot_distances(distances, save_plot=False):
   )
   plt.grid(axis="y")
 
-  plt.show()
   if save_plot:
     if not os.path.exists(DIST_PLOT_SAVE_PATH):
       os.makedirs(DIST_PLOT_SAVE_PATH)
     plt.savefig(
       os.path.join(DIST_PLOT_SAVE_PATH, DIST_PLOT_SAVE_NAME), dpi=100,
     )
+
+  plt.show()
 
 
 def main():
@@ -68,7 +74,7 @@ def main():
       dist_str.append(line)
 
   dists = np.array(dist_str).astype(np.float32)
-  plot_distances(dists, save_plot=False)
+  plot_distances(dists, save_plot=SAVE_DIST_PLOT)
 
 
 if __name__ == "__main__":

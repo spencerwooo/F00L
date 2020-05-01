@@ -29,8 +29,8 @@ from utils import utils
 # Methods: fgsm / bim / mim / df / cw | hsj / ga
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "hsj"
-# Perturbation budget: levels 1,2,3,4
-BUDGET_LEVEL = 1
+# Perturbation budget: levels 1, 2, 3, 4
+BUDGET_LEVEL = 3
 
 SAVE_DIST = False
 SAVE_ADVS = True
