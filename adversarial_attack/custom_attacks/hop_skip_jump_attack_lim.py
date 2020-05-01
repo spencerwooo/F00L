@@ -1,6 +1,7 @@
 """ Custom version of hop skip jump attack """
 
 # -*- coding: utf-8 -*-
+# pylint: disable=invalid-name,protected-access,pointless-string-statement,missing-function-docstring
 import logging
 import math
 import sys
@@ -214,9 +215,11 @@ class LimitedHopSkipJumpAttack(Attack):
     assert a.perturbed.dtype == self.external_dtype
     # get original and starting point in the right format
     original = a.unperturbed.astype(self.internal_dtype)
-    perturbed = a.perturbed.astype(self.internal_dtype)
+    adversary = a.perturbed.astype(self.internal_dtype)
 
-    initial_dist = self.compute_distance(perturbed, original)
+    assert adversary.dtype == self.internal_dtype
+
+    # initial_dist = self.compute_distance(adversary, original)
 
     # ===========================================================
     # Iteratively refine adversarial
@@ -224,11 +227,11 @@ class LimitedHopSkipJumpAttack(Attack):
     t0 = time.time()
 
     # Project the initialization to the boundary.
-    perturbed, dist_post_update = yield from self.binary_search_batch(
-      original, np.expand_dims(perturbed, 0), decision_function
+    adversary, dist_post_update = yield from self.binary_search_batch(
+      original, np.expand_dims(adversary, 0), decision_function
     )
 
-    dist = self.compute_distance(perturbed, original)
+    dist = self.compute_distance(adversary, original)
 
     distance = a.distance.value
     self.time_search += time.time() - t0
@@ -253,7 +256,7 @@ class LimitedHopSkipJumpAttack(Attack):
 
       # approximate gradient.
       gradf = yield from self.approximate_gradient(
-        decision_function, perturbed, num_evals, delta
+        decision_function, adversary, num_evals, delta
       )
 
       if self.constraint == "linf":
@@ -269,31 +272,31 @@ class LimitedHopSkipJumpAttack(Attack):
       if self.stepsize_search == "geometric_progression":
         # find step size.
         epsilon = yield from self.geometric_progression_for_stepsize(
-          perturbed, update, dist, decision_function, step
+          adversary, update, dist, decision_function, step
         )
 
         # Update the sample.
-        perturbed = np.clip(
-          perturbed + epsilon * update, self.clip_min, self.clip_max
+        adversary = np.clip(
+          adversary + epsilon * update, self.clip_min, self.clip_max
         )
 
         # Binary search to return to the boundary.
-        perturbed, dist_post_update = yield from self.binary_search_batch(
-          original, perturbed[None], decision_function
+        adversary, dist_post_update = yield from self.binary_search_batch(
+          original, adversary[None], decision_function
         )
 
       elif self.stepsize_search == "grid_search":
         # Grid search for stepsize.
         epsilons = np.logspace(-4, 0, num=20, endpoint=True) * dist
         epsilons_shape = [20] + len(self.shape) * [1]
-        perturbeds = perturbed + epsilons.reshape(epsilons_shape) * update
+        perturbeds = adversary + epsilons.reshape(epsilons_shape) * update
         perturbeds = np.clip(perturbeds, self.clip_min, self.clip_max)
         idx_perturbed = yield from decision_function(perturbeds)
 
         if np.sum(idx_perturbed) > 0:
           # Select the perturbation that yields the minimum
           # distance after binary search.
-          perturbed, dist_post_update = yield from self.binary_search_batch(
+          adversary, dist_post_update = yield from self.binary_search_batch(
             original, perturbeds[idx_perturbed], decision_function
           )
       t2 = time.time()
@@ -301,13 +304,7 @@ class LimitedHopSkipJumpAttack(Attack):
       self.time_search += t2 - t1
 
       # compute new distance.
-      dist = self.compute_distance(perturbed, original)
-
-      # * If distance is sufficiently close to expected threshold, then stop the attack.
-      if not self.expected_threshold is None:
-        diff = self.expected_threshold - dist
-        if 0 <= diff <= 4 / 255:
-          break
+      dist = self.compute_distance(adversary, original)
 
       # ===========================================================
       # Log the step
@@ -321,12 +318,22 @@ class LimitedHopSkipJumpAttack(Attack):
       self.log_step(step, distance, message)
       sys.stdout.flush()
 
-    # ! print final distance
-    print(
-      "[Final iter] step {:>2}: initial dist: {:.3f}, final dist: {:.3f}, threshold: {:.3f}".format(
-        step, initial_dist, dist, self.expected_threshold
-      )
-    )
+      # * If distance is sufficiently close to expected threshold, then stop the attack.
+      if not self.expected_threshold is None:
+        if 0 <= self.expected_threshold - distance <= 4 / 255:
+          break
+
+    # ! Print final distance
+    # print(
+    #   "[Final iter] step {:>2}: initial dist: {:.3f}, final dist: {:.3f}, threshold: {:.3f}".format(
+    #     step, initial_dist, distance, self.expected_threshold
+    #   )
+    # )
+    # Log distances to file
+    with open(
+      "hsja_{:.3f}_dist.txt".format(self.expected_threshold), "a+"
+    ) as f:
+      f.write(str(distance) + "\n")
 
     # ===========================================================
     # Log overall runtime
@@ -386,7 +393,7 @@ class LimitedHopSkipJumpAttack(Attack):
     # ! Why??? Binary search to minimize l2 distance to the original input.
     low = 0.0
     high = 1.0
-    while high - low > 0.001:
+    while high - low > 0.1:
       mid = (high + low) / 2.0
       blended = (1 - mid) * a.unperturbed + mid * random_noise
       _, success = yield from a.forward_one(blended.astype(self.external_dtype))
@@ -399,8 +406,7 @@ class LimitedHopSkipJumpAttack(Attack):
     if self.constraint == "l2":
       return np.linalg.norm(x1 - x2)
     elif self.constraint == "linf":
-      # return np.max(abs(x1 - x2))
-      return np.linalg.norm((x1 - x2).flatten(), np.inf)
+      return np.max(abs(x1 - x2))
 
   def project(self, unperturbed, perturbed_inputs, alphas):
     """ Projection onto given l2 / linf balls in a batch. """
@@ -449,9 +455,7 @@ class LimitedHopSkipJumpAttack(Attack):
       lows = np.where(decisions == 0, mids, lows)
       highs = np.where(decisions == 1, mids, highs)
 
-      # if mids <= self.expected_threshold:
-      #   break
-
+      # ! Abort early if threshold met
       if 0 <= self.expected_threshold - mids <= 4 / 255:
         break
 

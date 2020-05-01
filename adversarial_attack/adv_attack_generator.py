@@ -22,18 +22,18 @@ from matplotlib import rcParams
 from numpy.linalg import norm
 from tqdm.auto import tqdm
 
-from utils import utils
 from custom_attacks import LimitedHopSkipJumpAttack
+from utils import utils
 
 # Models: resnet / vgg / mobilenet / inception
 # Methods: fgsm / bim / mim / df / cw | hsj / ga
 TARGET_MODEL = "resnet"
 ATTACK_METHOD = "hsj"
 # Perturbation budget: levels 1,2,3,4
-BUDGET_LEVEL = 3
+BUDGET_LEVEL = 1
 
 SAVE_DIST = False
-SAVE_ADVS = False
+SAVE_ADVS = True
 
 # Save distance plot to local or visualize plot directly
 DIST_PLOT_VISUAL = True
@@ -157,6 +157,7 @@ def attack_params(att, image, label):
     "cw": {},
     "hsj": {
       "batch_size": BATCH_SIZE,
+      "internal_dtype": np.float32,
       "iterations": 64,
       "initial_num_evals": 10,
       "max_num_evals": 1000,
@@ -206,13 +207,12 @@ def plot_distances(distances):
 
   if DIST_PLOT_VISUAL:
     plt.show()
-  # ! Debug mode, uncomment below when finished!
-  # else:
-  #   if not os.path.exists(DIST_PLOT_SAVE_PATH):
-  #     os.makedirs(DIST_PLOT_SAVE_PATH)
-  #   plt.savefig(
-  #     os.path.join(DIST_PLOT_SAVE_PATH, DIST_PLOT_SAVE_NAME), dpi=100,
-  #   )
+  else:
+    if not os.path.exists(DIST_PLOT_SAVE_PATH):
+      os.makedirs(DIST_PLOT_SAVE_PATH)
+    plt.savefig(
+      os.path.join(DIST_PLOT_SAVE_PATH, DIST_PLOT_SAVE_NAME), dpi=100,
+    )
 
 
 def main():
@@ -270,7 +270,7 @@ def main():
       # _lp = (
       #   norm(perturb) if ATTACK_METHOD in ["cw", "df"] else np.max(abs(perturb))
       # )
-      print("[Norm calcu] dist: {:.3f}".format(_lp))
+      # print("[Calculated] dist: {:.3f}".format(_lp))
 
       # For attacks with minimization approaches (deep fool, cw, hop skip jump),
       # if distance larger than threshold, we consider attack failed
@@ -301,18 +301,18 @@ def main():
     )
   )
 
-  #! evaluate mean distance
-  distances = np.asarray(distances)
-  if SAVE_DIST:
-    np.save("dist_{}.npy".format(ATTACK_METHOD), distances)
-  print(
-    "Distance: min {:.5f}, mean {:.5f}, max {:.5f}".format(
-      distances.min(), np.median(distances), distances.max()
+  #! Evaluate mean distance for attacks other than HSJA (HSJA is evaluated manually)
+  if ATTACK_METHOD not in ["hsj"]:
+    distances = np.asarray(distances)
+    if SAVE_DIST:
+      np.save("dist_{}.npy".format(ATTACK_METHOD), distances)
+    print(
+      "Distance: min {:.5f}, mean {:.5f}, max {:.5f}".format(
+        distances.min(), np.median(distances), distances.max()
+      )
     )
-  )
-  # time.sleep(0.5)
 
-  plot_distances(distances)
+    plot_distances(distances)
 
   # Save generated adversaries
   if SAVE_ADVS:
