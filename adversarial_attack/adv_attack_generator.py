@@ -22,22 +22,26 @@ from matplotlib import rcParams
 from numpy.linalg import norm
 from tqdm.auto import tqdm
 
-from custom_attacks import LimitedHopSkipJumpAttack
+from custom_attacks import (
+  LimitedCarliniWagnerL2Attack,
+  LimitedDeepFoolL2Attack,
+  LimitedHopSkipJumpAttack,
+)
 from utils import utils
 
 # Models: resnet / vgg / mobilenet / inception
 # Methods: fgsm / bim / mim / df / cw | hsj / ga
 TARGET_MODEL = "resnet"
-ATTACK_METHOD = "hsj"
+ATTACK_METHOD = "df"
 # Perturbation budget: levels 1, 2, 3, 4
-BUDGET_LEVEL = 3
+BUDGET_LEVEL = 1
 
 SAVE_DIST = False
-SAVE_ADVS = True
+SAVE_ADVS = False
 
 # Save distance plot to local or visualize plot directly
 # ! Note that this value won't affect HSJA plotting behavior -- not plotting
-DIST_PLOT_VISUAL = False
+DIST_PLOT_VISUAL = True
 
 THRESHOLD = {
   1: {
@@ -132,8 +136,8 @@ def attack_switcher(att, fmodel):
     "fgsm": fa.GradientSignAttack(fmodel, distance=Linf),
     "bim": fa.LinfinityBasicIterativeAttack(fmodel, distance=Linf),
     "mim": fa.MomentumIterativeAttack(fmodel, distance=Linf),
-    "df": fa.DeepFoolL2Attack(fmodel),
-    "cw": fa.CarliniWagnerL2Attack(fmodel),
+    "df": LimitedDeepFoolL2Attack(fmodel),
+    "cw": LimitedCarliniWagnerL2Attack(fmodel),
     "hsj": LimitedHopSkipJumpAttack(fmodel, distance=Linf),
     "ga": fa.GenAttack(fmodel, criterion=TargetClass(9), distance=Linf),
   }
@@ -154,8 +158,8 @@ def attack_params(att, image, label):
       "binary_search": False,
       "epsilon": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
     },
-    "df": {},
-    "cw": {},
+    "df": {"expected_threshold": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],},
+    "cw": {"expected_threshold": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],},
     "hsj": {
       "batch_size": BATCH_SIZE,
       "internal_dtype": np.float32,
@@ -195,8 +199,10 @@ def plot_distances(distances):
   plt.axhline(y=THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD], color=cmap(0))
 
   plt.ylabel("Distance")
-  # plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 1.2)
-  plt.ylim(0, 0.7)
+  if ATTACK_METHOD in ["hsj", "ga"]:
+    plt.ylim(0, 0.7)
+  else:
+    plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 1.2)
 
   plt.xlabel("Adversaries")
   plt.title(
