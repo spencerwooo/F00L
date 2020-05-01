@@ -66,8 +66,8 @@ def plot_distances(distances, save_plot=False):
 
 def main():
   """ Read file and plot! """
-
   dist_str = []
+
   # Read HSJA distance file
   with open(DIST_FILE_PATH, "r") as f:
     for line in f.readlines():
