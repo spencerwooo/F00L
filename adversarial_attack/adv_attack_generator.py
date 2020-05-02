@@ -48,8 +48,8 @@ THRESHOLD = {
     "fgsm": 4 / 255,
     "bim": 4 / 255,
     "mim": 4 / 255,
-    "df": 3,
-    "cw": 3,
+    "df": 1,
+    "cw": 1,
     "hsj": 64 / 255,
     "ga": 64 / 255,
   },
@@ -57,8 +57,8 @@ THRESHOLD = {
     "fgsm": 8 / 255,
     "bim": 8 / 255,
     "mim": 8 / 255,
-    "df": 5,
-    "cw": 5,
+    "df": 2,
+    "cw": 2,
     "hsj": 72 / 255,
     "ga": 72 / 255,
   },
@@ -66,8 +66,8 @@ THRESHOLD = {
     "fgsm": 16 / 255,
     "bim": 16 / 255,
     "mim": 16 / 255,
-    "df": 8,
-    "cw": 8,
+    "df": 4,
+    "cw": 4,
     "hsj": 80 / 255,
     "ga": 80 / 255,
   },
@@ -75,8 +75,8 @@ THRESHOLD = {
     "fgsm": 32 / 255,
     "bim": 32 / 255,
     "mim": 32 / 255,
-    "df": 10,
-    "cw": 10,
+    "df": 8,
+    "cw": 8,
     "hsj": 88 / 255,
     "ga": 88 / 255,
   },
@@ -201,8 +201,8 @@ def plot_distances(distances):
   plt.ylabel("Distance")
   if ATTACK_METHOD in ["hsj", "ga"]:
     plt.ylim(0, 0.7)
-  else:
-    plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 1.2)
+  # else:
+  #   plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 1.2)
 
   plt.xlabel("Adversaries")
   plt.title(
@@ -274,10 +274,6 @@ def main():
       _lp = norm(
         perturb.flatten(), 2 if ATTACK_METHOD in ["cw", "df"] else np.inf
       )
-      # _lp = (
-      #   norm(perturb) if ATTACK_METHOD in ["cw", "df"] else np.max(abs(perturb))
-      # )
-      # print("[Calculated] dist: {:.3f}".format(_lp))
 
       # For attacks with minimization approaches (deep fool, cw, hop skip jump),
       # if distance larger than threshold, we consider attack failed
