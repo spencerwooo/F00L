@@ -32,7 +32,7 @@ class LimitedDeepFoolAttack(Attack):
 
   @generator_decorator
   def as_generator(
-    self, a, steps=100, subsample=10, p=None, expected_threshold=np.inf
+    self, a, steps=100, subsample=10, p=None, expected_threshold=None
   ):
 
     """Simple and close to optimal gradient-based
@@ -107,12 +107,21 @@ class LimitedDeepFoolAttack(Attack):
       """Get all labels with p < p[original_class]"""
       return [k for k in labels if logits[k] < logits[_label]]
 
+    original = a.unperturbed
     perturbed = a.unperturbed
     min_, max_ = a.bounds()
 
-    for _ in range(steps):
+    for step in range(steps):
       logits, grad, is_adv = yield from a.forward_and_gradient_one(perturbed)
-      if is_adv:
+      #! Use our own definition of L2 distance to evaluate distance
+      #! and decide whether to abort early
+      perturbation_l2 = np.linalg.norm(original - perturbed)
+      if is_adv and perturbation_l2 <= expected_threshold:
+        print(
+          "[Abort early] step: {:>2}, l2 dist: {:.3f}, threshold: {:.3f}".format(
+            step, perturbation_l2, expected_threshold
+          )
+        )
         return
 
       # correspondance to algorithm 2 in [1]_:
@@ -130,6 +139,9 @@ class LimitedDeepFoolAttack(Attack):
           " than Misclassification(). You can try increasing"
           " 'subsample' or disabling it."
         )
+        # TODO: If criteria fails, use the following to always return a valid adversary
+        # print("[FAIL] Failed to find an adversary under the desired distance.")
+        # return
 
       # instead of using the logits and the gradient of the logits,
       # we use a numerically stable implementation of the cross-entropy
@@ -173,16 +185,6 @@ class LimitedDeepFoolAttack(Attack):
       perturbed = perturbed + 1.05 * perturbation
       perturbed = np.clip(perturbed, min_, max_)
 
-      # ! Abort early if threshold is already met
-      if optimal <= expected_threshold:
-        # Log distance
-        print(
-          "[Abort early] dist: {:.3f}, threshold: {:.3f}".format(
-            optimal, expected_threshold
-          )
-        )
-        break
-
     yield from a.forward_one(
       perturbed
     )  # to find an adversarial in the last step
@@ -190,7 +192,7 @@ class LimitedDeepFoolAttack(Attack):
 
 class LimitedDeepFoolL2Attack(LimitedDeepFoolAttack):
   @generator_decorator
-  def as_generator(self, a, steps=100, subsample=10, expected_threshold=np.inf):
+  def as_generator(self, a, steps=100, subsample=10, expected_threshold=None):
     yield from super(LimitedDeepFoolL2Attack, self).as_generator(
       a,
       steps=steps,
@@ -202,7 +204,7 @@ class LimitedDeepFoolL2Attack(LimitedDeepFoolAttack):
 
 class LimitedDeepFoolLinfinityAttack(LimitedDeepFoolAttack):
   @generator_decorator
-  def as_generator(self, a, steps=100, subsample=10, expected_threshold=np.inf):
+  def as_generator(self, a, steps=100, subsample=10, expected_threshold=None):
     yield from super(LimitedDeepFoolLinfinityAttack, self).as_generator(
       a,
       steps=steps,
