@@ -40,7 +40,7 @@ class LimitedCarliniWagnerL2Attack(Attack):
     learning_rate=5e-3,
     initial_const=1e-2,
     abort_early=True,
-    expected_threshold=np.inf,
+    expected_threshold=None,
   ):
 
     """The L2 version of the Carlini & Wagner attack.
@@ -184,16 +184,11 @@ class LimitedCarliniWagnerL2Attack(Attack):
             break  # stop Adam if there has not been progress
           loss_at_previous_check = loss
 
-        # ! Abort early if threshold is already met
-        current_dist = np.linalg.norm(a.perturbed - a.unperturbed)
-        if current_dist <= expected_threshold:
-          print(
-            "[Abort early] dist: {:.3f}, threshold: {:.3f}".format(
-              current_dist, expected_threshold
-            )
-          )
-          break
-        # if a.distance
+        if found_adv:
+          #! Abort early if current distance is already lower than threshold
+          iter_dist = np.linalg.norm(a.perturbed - a.unperturbed)
+          if iter_dist <= expected_threshold:
+            break
 
       if found_adv:
         logging.info("found adversarial with const = {}".format(const))
