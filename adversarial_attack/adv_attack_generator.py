@@ -5,7 +5,7 @@ Perform adversarial attacks on CNNs
 
   'advs/{TARGET_MODEL}/{ATTACK_METHOD}/{FILE_NAME}.npy'
 
-* e.g.: 'advs/resnet/fgsm/0405_1021_0.02_adv.npy'
+* e.g.: 'advs/resnet/fgsm/adv_level1.npy'
 """
 
 import os
@@ -32,24 +32,27 @@ from utils import utils
 # Models: resnet / vgg / mobilenet / inception
 # Methods: fgsm / bim / mim / df / cw | hsj / ga
 TARGET_MODEL = "resnet"
-ATTACK_METHOD = "df"
+ATTACK_METHOD = "cw"
 # Perturbation budget: levels 1, 2, 3, 4
 BUDGET_LEVEL = 1
 
 SAVE_DIST = False
-SAVE_ADVS = False
+SAVE_ADVS = True
 
 # Save distance plot to local or visualize plot directly
 # ! Note that this value won't affect HSJA plotting behavior -- not plotting
 DIST_PLOT_VISUAL = True
+
+# deepfool overshoot parameters (resnet)
+OVERSHOOT = {1: 4, 2: 8, 3: 11, 4: 15}
 
 THRESHOLD = {
   1: {
     "fgsm": 4 / 255,
     "bim": 4 / 255,
     "mim": 4 / 255,
-    "df": 1,
-    "cw": 1,
+    "df": 2,
+    "cw": 2,
     "hsj": 64 / 255,
     "ga": 64 / 255,
   },
@@ -57,8 +60,8 @@ THRESHOLD = {
     "fgsm": 8 / 255,
     "bim": 8 / 255,
     "mim": 8 / 255,
-    "df": 2,
-    "cw": 2,
+    "df": 4,
+    "cw": 4,
     "hsj": 72 / 255,
     "ga": 72 / 255,
   },
@@ -66,8 +69,8 @@ THRESHOLD = {
     "fgsm": 16 / 255,
     "bim": 16 / 255,
     "mim": 16 / 255,
-    "df": 4,
-    "cw": 4,
+    "df": 6,
+    "cw": 6,
     "hsj": 80 / 255,
     "ga": 80 / 255,
   },
@@ -158,8 +161,18 @@ def attack_params(att, image, label):
       "binary_search": False,
       "epsilon": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
     },
-    "df": {"expected_threshold": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],},
-    "cw": {"expected_threshold": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],},
+    "df": {
+      "steps": 100,
+      "expected_threshold": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
+      # "overshoot": OVERSHOOT[BUDGET_LEVEL],
+    },
+    "cw": {
+      "initial_const": 1000,
+      "learning_rate": 0.07,
+      "binary_search_steps": 5,
+      "max_iterations": 1000,
+      "expected_threshold": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
+    },
     "hsj": {
       "batch_size": BATCH_SIZE,
       "internal_dtype": np.float32,
@@ -171,6 +184,7 @@ def attack_params(att, image, label):
     },
     "ga": {
       "binary_search": False,
+      "generations": 1000,
       "epsilon": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
     },
   }
@@ -201,6 +215,8 @@ def plot_distances(distances):
   plt.ylabel("Distance")
   if ATTACK_METHOD in ["hsj", "ga"]:
     plt.ylim(0, 0.7)
+  elif ATTACK_METHOD in ["df", "cw"]:
+    plt.ylim(0, 8.2)
   # else:
   #   plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 1.2)
 
