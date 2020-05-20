@@ -32,7 +32,13 @@ class LimitedDeepFoolAttack(Attack):
 
   @generator_decorator
   def as_generator(
-    self, a, steps=100, subsample=10, p=None, expected_threshold=None
+    self,
+    a,
+    steps=100,
+    subsample=10,
+    p=None,
+    expected_threshold=None,
+    overshoot=1.05,
   ):
 
     """Simple and close to optimal gradient-based
@@ -111,17 +117,11 @@ class LimitedDeepFoolAttack(Attack):
     perturbed = a.unperturbed
     min_, max_ = a.bounds()
 
-    for step in range(steps):
+    for _ in range(steps):
       logits, grad, is_adv = yield from a.forward_and_gradient_one(perturbed)
       #! Use our own definition of L2 distance to evaluate distance
       #! and decide whether to abort early
-      perturbation_l2 = np.linalg.norm(original - perturbed)
-      if is_adv and perturbation_l2 <= expected_threshold:
-        print(
-          "[Abort early] step: {:>2}, l2 dist: {:.3f}, threshold: {:.3f}".format(
-            step, perturbation_l2, expected_threshold
-          )
-        )
+      if is_adv:
         return
 
       # correspondance to algorithm 2 in [1]_:
@@ -133,15 +133,9 @@ class LimitedDeepFoolAttack(Attack):
 
       residual_labels = get_residual_labels(logits)
       if len(residual_labels) == 0:
-        raise ValueError(
-          "No residual_labels left. This can happen if DeepFool is"
-          " used with a criterion that is more difficult to achieve"
-          " than Misclassification(). You can try increasing"
-          " 'subsample' or disabling it."
-        )
-        # TODO: If criteria fails, use the following to always return a valid adversary
+        # If criteria fails, use the following to always return a valid adversary
         # print("[FAIL] Failed to find an adversary under the desired distance.")
-        # return
+        break
 
       # instead of using the logits and the gradient of the logits,
       # we use a numerically stable implementation of the cross-entropy
@@ -182,8 +176,16 @@ class LimitedDeepFoolAttack(Attack):
       # and only adds the overshoot when adding the accumulated
       # perturbation to the original input; we apply the overshoot
       # to each perturbation (step)
-      perturbed = perturbed + 1.05 * perturbation
-      perturbed = np.clip(perturbed, min_, max_)
+      # perturbed = perturbed + 1.05 * perturbation
+      # perturbed = np.clip(perturbed, min_, max_)
+
+      # accumulate perturbation to get closer to expected limitations
+      for i in np.linspace(0, 3, 50):
+        perturbed = perturbed + (overshoot + i) * perturbation
+        perturbed = np.clip(perturbed, min_, max_)
+        dist_l2 = np.linalg.norm(perturbed - original)
+        if dist_l2 >= expected_threshold - 0.6:
+          break
 
     yield from a.forward_one(
       perturbed
@@ -192,23 +194,29 @@ class LimitedDeepFoolAttack(Attack):
 
 class LimitedDeepFoolL2Attack(LimitedDeepFoolAttack):
   @generator_decorator
-  def as_generator(self, a, steps=100, subsample=10, expected_threshold=None):
+  def as_generator(
+    self, a, steps=100, subsample=10, expected_threshold=None, overshoot=1.05
+  ):
     yield from super(LimitedDeepFoolL2Attack, self).as_generator(
       a,
       steps=steps,
       subsample=subsample,
       p=2,
       expected_threshold=expected_threshold,
+      overshoot=overshoot,
     )
 
 
 class LimitedDeepFoolLinfinityAttack(LimitedDeepFoolAttack):
   @generator_decorator
-  def as_generator(self, a, steps=100, subsample=10, expected_threshold=None):
+  def as_generator(
+    self, a, steps=100, subsample=10, expected_threshold=None, overshoot=1.05
+  ):
     yield from super(LimitedDeepFoolLinfinityAttack, self).as_generator(
       a,
       steps=steps,
       subsample=subsample,
       p=np.inf,
       expected_threshold=expected_threshold,
+      overshoot=overshoot,
     )
