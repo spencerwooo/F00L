@@ -1,3 +1,10 @@
+""" CNN Trainer Module
+
+Modules and functions used for CNN training.
+This is mainly used inside `convnet_trainer.ipynb`
+"""
+
+# -*- coding: utf-8 -*-
 from __future__ import division, print_function
 
 import copy
@@ -8,8 +15,8 @@ import urllib
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torchvision
 import torch.nn as nn
+import torchvision
 import torchvision.models as models
 import torchvision.transforms as transforms
 from tqdm import tqdm
@@ -28,21 +35,27 @@ def import_dataset(dataset_path, image_size):
   1. 213 × 213: ResNet18, MobileNet v2, VGG11
   2. 299 × 299: Inception v3
   """
-  transform = transforms.Compose([
+  transform = transforms.Compose(
+    [
       transforms.Resize((image_size, image_size)),
       transforms.ToTensor(),
-      transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-  ])
+      transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    ]
+  )
 
   image_datasets = {
-      x: torchvision.datasets.ImageFolder(root=os.path.join(dataset_path, x), transform=transform)
-      for x in ['train', 'val']
+    x: torchvision.datasets.ImageFolder(
+      root=os.path.join(dataset_path, x), transform=transform
+    )
+    for x in ["train", "val"]
   }
   data_loaders = {
-      x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4, shuffle=True, num_workers=0)
-      for x in ['train', 'val']
+    x: torch.utils.data.DataLoader(
+      image_datasets[x], batch_size=4, shuffle=True, num_workers=0
+    )
+    for x in ["train", "val"]
   }
-  data_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
+  data_sizes = {x: len(image_datasets[x]) for x in ["train", "val"]}
 
   return data_loaders, data_sizes
 
@@ -56,7 +69,7 @@ def load_pretrained_model(model_name, class_names):
   model_conv = None
   top_layer = None
 
-  if model_name == 'resnet18':
+  if model_name == "resnet18":
     model_conv = models.resnet18(pretrained=True)
 
     # freeze all layers except the final layer (dense layer)
@@ -69,7 +82,7 @@ def load_pretrained_model(model_name, class_names):
     # return top layer
     top_layer = model_conv.fc
 
-  elif model_name == 'vgg11':
+  elif model_name == "vgg11":
     model_conv = models.vgg11(pretrained=True)
 
     # freeze all layers except the final layer (dense layer)
@@ -82,7 +95,7 @@ def load_pretrained_model(model_name, class_names):
     # return top layer
     top_layer = model_conv.classifier[-1]
 
-  elif model_name == 'inception_v3':
+  elif model_name == "inception_v3":
     model_conv = models.inception_v3(pretrained=True, aux_logits=False)
 
     # freeze all layers except the final layer (dense layer)
@@ -95,7 +108,7 @@ def load_pretrained_model(model_name, class_names):
     # return top layer
     top_layer = model_conv.fc
 
-  elif model_name == 'mobilenet_v2':
+  elif model_name == "mobilenet_v2":
     model_conv = models.mobilenet_v2(pretrained=True)
 
     # freeze all layers except the final layer (dense layer)
@@ -109,7 +122,7 @@ def load_pretrained_model(model_name, class_names):
     top_layer = model_conv.classifier[-1]
 
   else:
-    raise Exception('No such model.')
+    raise Exception("No such model.")
 
   return model_conv, top_layer
 
@@ -125,7 +138,7 @@ def preview_images(img, img_title=None):
   img = np.clip(img, 0, 1)
   plt.imshow(img)
   if img_title is not None:
-    plt.title('Ground truth:\n{}'.format(', '.join(img_title)))
+    plt.title("Ground truth:\n{}".format(", ".join(img_title)))
   plt.pause(0.001)
 
 
@@ -135,14 +148,24 @@ def notify_server_chan(msg_title, msg_desp):
   """
   msg_title = urllib.parse.quote_plus(msg_title)
   msg_desp = urllib.parse.quote_plus(msg_desp)
-  url = 'https://sc.ftqq.com/SCU51420Tc53c54655f0a9ffe3d66789be07a51af5cda6de0e572a.send?text={}&desp={}'.format(
-      msg_title, msg_desp)
+  url = "https://sc.ftqq.com/SCU51420Tc53c54655f0a9ffe3d66789be07a51af5cda6de0e572a.send?text={}&desp={}".format(
+    msg_title, msg_desp
+  )
 
   f = urllib.request.urlopen(url)
-  print('\n[Server Chan]', f.read().decode('utf-8'))
+  print("\n[Server Chan]", f.read().decode("utf-8"))
 
 
-def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, scheduler, epoches=25):
+def train_model(
+  device,
+  data_loaders,
+  data_sizes,
+  model,
+  criterion,
+  optimizer,
+  scheduler,
+  epoches=25,
+):
   """
   Train model loaded by function load_pretrained_model() with ImageNette dataset
   """
@@ -151,14 +174,14 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
   best_model_wts = copy.deepcopy(model.state_dict())
   best_acc = 0.0
 
-  loss_list = {'train': [], 'val': []}
-  acc_list = {'train': [], 'val': []}
+  loss_list = {"train": [], "val": []}
+  acc_list = {"train": [], "val": []}
 
   # begin epoch
   for epoch in range(epoches):
 
-    for phase in ['train', 'val']:
-      if phase == 'train':
+    for phase in ["train", "val"]:
+      if phase == "train":
         model.train()
       else:
         model.eval()
@@ -167,8 +190,10 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       running_corrects = 0
 
       pbar = tqdm(data_loaders[phase])
-      pbar.set_description('Epoch: {}/{} - {:>5}'.format(epoch + 1, epoches, phase))
-      pbar.set_postfix(loss='')
+      pbar.set_description(
+        "Epoch: {}/{} - {:>5}".format(epoch + 1, epoches, phase)
+      )
+      pbar.set_postfix(loss="")
 
       # iterate over data
       for images, labels in pbar:
@@ -178,13 +203,13 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
         optimizer.zero_grad()
 
         # forward propaganda
-        with torch.set_grad_enabled(phase == 'train'):
+        with torch.set_grad_enabled(phase == "train"):
           outputs = model(images)
           _, preds = torch.max(outputs, 1)
           loss = criterion(outputs, labels)
 
           # backward propaganda only in training mode
-          if phase == 'train':
+          if phase == "train":
             loss.backward()
             optimizer.step()
 
@@ -193,9 +218,9 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
         running_corrects += torch.sum(preds == labels.data)
 
         # update progress
-        pbar.set_postfix(loss='{:.2f}%'.format(loss.detach().cpu().numpy()))
+        pbar.set_postfix(loss="{:.2f}%".format(loss.detach().cpu().numpy()))
 
-      if phase == 'train':
+      if phase == "train":
         scheduler.step()
 
       epoch_loss = running_loss / data_sizes[phase]
@@ -210,7 +235,7 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
       acc_list[phase].append(epoch_acc)
 
       # deepcopy the model
-      if phase == 'val' and epoch_acc > best_acc:
+      if phase == "val" and epoch_acc > best_acc:
         best_acc = epoch_acc
         best_model_wts = copy.deepcopy(model.state_dict())
 
@@ -222,8 +247,12 @@ def train_model(device, data_loaders, data_sizes, model, criterion, optimizer, s
   time_elapsed = toc - tic
 
   # print statistics
-  print('\nTraining completed in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
-  print('Best validation accuracy: {:4f} %'.format(best_acc * 100))
+  print(
+    "\nTraining completed in {:.0f}m {:.0f}s".format(
+      time_elapsed // 60, time_elapsed % 60
+    )
+  )
+  print("Best validation accuracy: {:4f} %".format(best_acc * 100))
 
   # send notifications
   # msg_title = 'Congrats, training success!'
