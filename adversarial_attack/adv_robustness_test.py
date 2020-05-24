@@ -30,9 +30,9 @@ from utils import utils
 
 # Models: resnet, vgg, mobilenet, inception
 # Attacks: fgsm, bim, mim, df, cw, hsj, ga
-TARGET_MODEL = "resnet"
+TARGET_MODEL = "inception"
 ATTACK_METHOD = "hsj"
-BUDGET_LEVEL = 3
+BUDGET_LEVEL = 1
 
 SAVE_RESULTS = True
 PLOT_RESULTS = True

@@ -31,20 +31,17 @@ from utils import utils
 
 # Models: resnet / vgg / mobilenet / inception
 # Methods: fgsm / bim / mim / df / cw | hsj / ga
-TARGET_MODEL = "resnet"
-ATTACK_METHOD = "cw"
+TARGET_MODEL = "inception"
+ATTACK_METHOD = "hsj"
 # Perturbation budget: levels 1, 2, 3, 4
-BUDGET_LEVEL = 1
+BUDGET_LEVEL = 4
 
 SAVE_DIST = False
 SAVE_ADVS = True
 
 # Save distance plot to local or visualize plot directly
 # ! Note that this value won't affect HSJA plotting behavior -- not plotting
-DIST_PLOT_VISUAL = True
-
-# deepfool overshoot parameters (resnet)
-OVERSHOOT = {1: 4, 2: 8, 3: 11, 4: 15}
+DIST_PLOT_VISUAL = False
 
 THRESHOLD = {
   1: {
@@ -103,7 +100,7 @@ CLASS_NAMES = [
   "parachute",
 ]
 
-BATCH_SIZE = 4
+BATCH_SIZE = 1
 DATASET_IMAGE_NUM = 10
 DATASET_PATH = "../data/imagenette2-160/val"
 
@@ -164,7 +161,6 @@ def attack_params(att, image, label):
     "df": {
       "steps": 100,
       "expected_threshold": THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD],
-      # "overshoot": OVERSHOOT[BUDGET_LEVEL],
     },
     "cw": {
       "initial_const": 1000,
@@ -217,8 +213,8 @@ def plot_distances(distances):
     plt.ylim(0, 0.7)
   elif ATTACK_METHOD in ["df", "cw"]:
     plt.ylim(0, 8.2)
-  # else:
-  #   plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 1.2)
+  else:
+    plt.ylim(0, THRESHOLD[BUDGET_LEVEL][ATTACK_METHOD] * 2)
 
   plt.xlabel("Adversaries")
   plt.title(
@@ -247,7 +243,9 @@ def main():
   )
 
   dataset_loader, dataset_size = utils.load_dataset(
-    dataset_path=DATASET_PATH, dataset_image_len=DATASET_IMAGE_NUM
+    dataset_path=DATASET_PATH,
+    dataset_image_len=DATASET_IMAGE_NUM,
+    batch_size=BATCH_SIZE,
   )
 
   # Use GPU if available

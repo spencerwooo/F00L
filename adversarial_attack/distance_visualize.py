@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rcParams
 
-TARGET_MODEL = "resnet"
+TARGET_MODEL = "inception"
 ATTACK_METHOD = "hsj"
-BUDGET_LEVEL = 3
+BUDGET_LEVEL = 1
 SAVE_DIST_PLOT = True
 
 THRESHOLD = {
