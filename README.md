@@ -61,16 +61,11 @@ You can download ImageNette training and validation images here: [160 px downloa
 
 ### Perturbation budget
 
-**White-box attack:**
-
-- FGSM, BIM, MIM: L∞ = 8/255
-- DeepFool: L∞ < 8/255
-- CW: L2 < 5
-
-**Black-box attack:**
-
-- HopSkipJumpAttack: L∞ < 8/255
-- GenAttack: L∞ = 0.5
+|           |   ![](https://latex.codecogs.com/svg.latex?\ell_p)    |     Attacks     | Level 1 | Level 2 | Level 3 | Level 4 |
+| :-------: | :---------------------------------------------------: | :-------------: | :-----: | :-----: | :-----: | :-----: |
+| White box | ![](https://latex.codecogs.com/svg.latex?\ell_\infty) | FGSM, BIM, MIM  |  4/255  |  8/255  | 16/255  | 32/255  |
+| White box |   ![](https://latex.codecogs.com/svg.latex?\ell_2)    |  DeepFool, C&W  |    2    |    4    |    6    |    8    |
+| Black box | ![](https://latex.codecogs.com/svg.latex?\ell_\infty) | HSJA, GenAttack | 64/255  | 72/255  | 80/255  | 88/255  |
 
 ### Image scaling
 
@@ -85,7 +80,6 @@ You can download ImageNette training and validation images here: [160 px downloa
 
 | Directory                                        | Purpose                                                                                                                                                                                                            |
 | :----------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [./misc](./misc)                                 | All are sample scripts where I follow examples from official PyTorch / Keras tutorials and try to recreate the same results, or where I keep some of the deprecated code which I no longer use or is proven wrong. |
 | [`convnet_trainer.ipynb`](convnet_trainer.ipynb) | Creating a state-of-the-art ConvNet by transfer training default ConvNet models that PyTorch provides against the ImageNette dataset                                                                               |
 | [./utils](./utils)                               | Utility module for `convnet_trainer.ipynb` to use when training different models with different architectures.                                                                                                     |
 | [./adversarial_attack](./adversarial_attack)     | Try to implement Steps 2-3 as shown in the experiment overview                                                                                                                                                     |
