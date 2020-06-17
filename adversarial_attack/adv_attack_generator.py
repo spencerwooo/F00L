@@ -31,13 +31,13 @@ from utils import utils
 
 # Models: resnet / vgg / mobilenet / inception
 # Methods: fgsm / bim / mim / df / cw | hsj / ga
-TARGET_MODEL = "inception"
-ATTACK_METHOD = "hsj"
+TARGET_MODEL = "resnet"
+ATTACK_METHOD = "fgsm"
 # Perturbation budget: levels 1, 2, 3, 4
 BUDGET_LEVEL = 1
 
 SAVE_DIST = False
-SAVE_ADVS = True
+SAVE_ADVS = False
 
 # Save distance plot to local or visualize plot directly
 # ! Note that this value won't affect HSJA plotting behavior -- not plotting

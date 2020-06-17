@@ -30,8 +30,8 @@ from utils import utils
 
 # Models: resnet, vgg, mobilenet, inception
 # Attacks: fgsm, bim, mim, df, cw, hsj, ga
-TARGET_MODEL = "inception"
-ATTACK_METHOD = "hsj"
+TARGET_MODEL = "resnet"
+ATTACK_METHOD = "fgsm"
 BUDGET_LEVEL = 1
 
 SAVE_RESULTS = True
@@ -169,79 +169,83 @@ def plot_results(original_data, flattened_data):
 
 
 # %%
-# Validate adv -> Rescale -> Validate scaled adv
+def main():
+  """ Validate adv -> Rescale -> Validate scaled adv """
+  model = init_models()
+  preprocessing = dict(
+    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3
+  )
 
-model = init_models()
-preprocessing = dict(
-  mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3
-)
+  dataset_loader, dataset_size = utils.load_dataset(
+    dataset_path=DATASET_PATH, dataset_image_len=DATASET_IMAGE_NUM
+  )
 
-dataset_loader, dataset_size = utils.load_dataset(
-  dataset_path=DATASET_PATH, dataset_image_len=DATASET_IMAGE_NUM
-)
+  # use GPU if available
+  if torch.cuda.is_available():
+    model = model.cuda()
 
-# use GPU if available
-if torch.cuda.is_available():
-  model = model.cuda()
+  fmodel = foolbox.models.PyTorchModel(
+    model,
+    bounds=(0, 1),
+    num_classes=len(CLASS_NAMES),
+    preprocessing=preprocessing,
+  )
 
-fmodel = foolbox.models.PyTorchModel(
-  model,
-  bounds=(0, 1),
-  num_classes=len(CLASS_NAMES),
-  preprocessing=preprocessing,
-)
+  advs = np.load(ADV_SAVE_PATH)
 
-advs = np.load(ADV_SAVE_PATH)
+  # * TASK 1/3: validate original adversaries
+  control_group_acc = utils.validate(
+    fmodel, dataset_loader, dataset_size, batch_size=BATCH_SIZE, advs=advs
+  )
 
-# * TASK 1/3: validate original adversaries
-control_group_acc = utils.validate(
-  fmodel, dataset_loader, dataset_size, batch_size=BATCH_SIZE, advs=advs
-)
+  # * TASK 2/3: resize adversaries
+  scales = [0.5, 2]
+  methods = [
+    "INTER_NEAREST",
+    "INTER_LINEAR",
+    "INTER_AREA",
+    "INTER_CUBIC",
+    "INTER_LANCZOS4",
+  ]
+  # Initialize resized adversaries dict
+  resized_advs = {method: {scale: None for scale in scales} for method in methods}
 
-# * TASK 2/3: resize adversaries
-scales = [0.5, 2]
-methods = [
-  "INTER_NEAREST",
-  "INTER_LINEAR",
-  "INTER_AREA",
-  "INTER_CUBIC",
-  "INTER_LANCZOS4",
-]
-# Initialize resized adversaries dict
-resized_advs = {method: {scale: None for scale in scales} for method in methods}
-
-pbar = tqdm(total=len(scales) * len(methods), desc="SCL")
-for method in methods:
-  for scale in scales:
-    resized_advs[method][scale] = utils.scale_adv(advs, scale, method)
-    pbar.update(1)
-pbar.close()
-
-# * TASK 3/3: validate resized adversaries
-print(
-  "{:<19} - success: {}%".format("CONTROL_GROUP  ×1", 100 - control_group_acc)
-)
-
-# Initialize success rate data
-success_data = {1: {"CONTROL_GROUP": 100.0 - control_group_acc}, 0.5: {}, 2: {}}
-success_data_flatten = {"CONTROL_GROUP ×1": 100.0 - control_group_acc}
-
-for scale in scales:
+  pbar = tqdm(total=len(scales) * len(methods), desc="SCL")
   for method in methods:
-    acc = utils.validate(
-      fmodel,
-      dataset_loader,
-      dataset_size,
-      batch_size=BATCH_SIZE,
-      advs=resized_advs[method][scale],
-      silent=True,
-    )
-    success_data[scale][method] = 100.0 - acc
-    success_data_flatten["{} ×{}".format(method, scale)] = 100.0 - acc
-    print("{:<14} ×{:<3} - success: {}%".format(method, scale, 100.0 - acc))
+    for scale in scales:
+      resized_advs[method][scale] = utils.scale_adv(advs, scale, method)
+      pbar.update(1)
+  pbar.close()
 
-save_results_csv(success_data_flatten)
+  # * TASK 3/3: validate resized adversaries
+  print(
+    "{:<19} - success: {}%".format("CONTROL_GROUP  ×1", 100 - control_group_acc)
+  )
 
-# %%
-# * Plot results (success rate - advs)
-plot_results(success_data, success_data_flatten)
+  # Initialize success rate data
+  success_data = {1: {"CONTROL_GROUP": 100.0 - control_group_acc}, 0.5: {}, 2: {}}
+  success_data_flatten = {"CONTROL_GROUP ×1": 100.0 - control_group_acc}
+
+  for scale in scales:
+    for method in methods:
+      acc = utils.validate(
+        fmodel,
+        dataset_loader,
+        dataset_size,
+        batch_size=BATCH_SIZE,
+        advs=resized_advs[method][scale],
+        silent=True,
+      )
+      success_data[scale][method] = 100.0 - acc
+      success_data_flatten["{} ×{}".format(method, scale)] = 100.0 - acc
+      print("{:<14} ×{:<3} - success: {}%".format(method, scale, 100.0 - acc))
+
+  save_results_csv(success_data_flatten)
+
+  # %%
+  # * Plot results (success rate - advs)
+  plot_results(success_data, success_data_flatten)
+
+
+if __name__ == "__main__":
+  main()
